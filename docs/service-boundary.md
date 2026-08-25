@@ -2,6 +2,7 @@
 
 ## Owns
 
+- The HTTP edge for FIAP X.
 - HTTP endpoints for upload initiation and confirmation, status lookup, and ZIP download.
 - Cognito JWT validation and authorization by the authenticated user's `sub`.
 - Short-lived S3 presigned multipart upload and download URLs.
