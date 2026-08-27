@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "promote_threshold": 2,
+  "window_days": 45,
+  "quarantine_threshold": 2,
+  "next_id": 3,
+  "lessons": [
+    {
+      "id": "L-001",
+      "key": "surviving_mutant::tothrow mockrejectedvalue tomatchobject new httpexception msg status does not assert the http status code assert err getstatus tobe status so a status code mutation is killed at the unit layer not only at e2e",
+      "text": "toThrow/MockRejectedValue + toMatchObject(new HttpException(msg, STATUS)) does not assert the HTTP status code; assert err.getStatus().toBe(STATUS) so a status-code mutation is killed at the unit layer, not only at e2e.",
+      "signal": "surviving_mutant",
+      "scope": "src/processing-requests",
+      "status": "candidate",
+      "features": [
+        "initial-vertical-slice"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/processing-requests/services/create-processing-request.service.spec.ts:59 (src/processing-requests)"
+      ],
+      "created": "2026-08-27T23:37:11Z",
+      "last_seen": "2026-08-27T23:37:11Z"
+    },
+    {
+      "id": "L-002",
+      "key": "spec_precision_gap::nest test fixture get token is a ts type error when token is a symbol value not a type use the concrete class generic get inmemorycatalogclient and ensure tsconfig build does not exclude test files from the type check gate else ts2749 slips past build lint",
+      "text": "Nest test fixture get<TOKEN> is a TS type error when TOKEN is a Symbol value, not a type; use the concrete class generic (get<InMemoryCatalogClient>) and ensure tsconfig.build does not exclude test files from the type-check gate, else TS2749 slips past build+lint.",
+      "signal": "spec_precision_gap",
+      "scope": "test",
+      "status": "candidate",
+      "features": [
+        "initial-vertical-slice"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "test/processing-requests.e2e-spec.ts:26 (test)"
+      ],
+      "created": "2026-08-27T23:37:16Z",
+      "last_seen": "2026-08-27T23:37:16Z"
+    }
+  ]
+}
