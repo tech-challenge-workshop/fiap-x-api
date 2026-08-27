@@ -200,10 +200,10 @@ Run in order: T8.
 
 **Done when**:
 
-- [ ] Controller accepts `CreateProcessingRequestDto` and returns `CreateProcessingRequestResponseDto`.
-- [ ] Controller has no processing-state transition logic.
-- [ ] E2E tests cover happy path, validation errors, and Catalog rejection.
-- [ ] Gate check passes: `npm test && npm run test:e2e`
+- [x] Controller accepts `CreateProcessingRequestDto` and returns `CreateProcessingRequestResponseDto`.
+- [x] Controller has no processing-state transition logic.
+- [x] E2E tests cover happy path, validation errors, and Catalog rejection.
+- [x] Gate check passes: `npm test && npm run test:e2e`
 
 **Tests**: e2e
 **Gate**: full

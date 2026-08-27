@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
 import type { CatalogClient } from '../ports/catalog-client.port';
 import { CreateProcessingRequestDto } from '../dtos/create-processing-request.dto';
 import { CreateProcessingRequestResponseDto } from '../dtos/create-processing-request-response.dto';
@@ -15,11 +15,19 @@ export class CreateProcessingRequestService {
   async execute(
     dto: CreateProcessingRequestDto,
   ): Promise<CreateProcessingRequestResponseDto> {
-    const processingRequestId = await this.catalogClient.createProcessingRequest(
-      dto.ownerUserId,
-      dto.sourceStorageKey,
-    );
+    try {
+      const processingRequestId =
+        await this.catalogClient.createProcessingRequest(
+          dto.ownerUserId,
+          dto.sourceStorageKey,
+        );
 
-    return { processingRequestId };
+      return { processingRequestId };
+    } catch {
+      throw new HttpException(
+        'Catalog rejected creation',
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
   }
 }

@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import {
   CreateProcessingRequestService,
   CATALOG_CLIENT,
@@ -45,7 +46,7 @@ describe('CreateProcessingRequestService', () => {
     expect(result).toEqual({ processingRequestId: 'pr-123' });
   });
 
-  it('propagates catalog client rejection', async () => {
+  it('maps catalog client rejection to HTTP 502', async () => {
     jest
       .spyOn(catalogClient, 'createProcessingRequest')
       .mockRejectedValue(new Error('Catalog rejected creation'));
@@ -55,6 +56,8 @@ describe('CreateProcessingRequestService', () => {
         ownerUserId: 'user-123',
         sourceStorageKey: 'videos/clip.mp4',
       }),
-    ).rejects.toThrow('Catalog rejected creation');
+    ).rejects.toMatchObject(
+      new HttpException('Catalog rejected creation', HttpStatus.BAD_GATEWAY),
+    );
   });
 });
