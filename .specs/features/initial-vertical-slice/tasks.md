@@ -249,9 +249,9 @@ Run in order: T8.
 
 **Done when**:
 
-- [ ] `npm run lint` passes with no new warnings.
-- [ ] `npm run build` compiles the project successfully.
-- [ ] Gate check passes: `npm run build && npm run lint`
+- [x] `npm run lint` passes with no new warnings.
+- [x] `npm run build` compiles the project successfully.
+- [x] Gate check passes: `npm run build && npm run lint`
 
 **Tests**: none
 **Gate**: build

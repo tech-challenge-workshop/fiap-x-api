@@ -8,15 +8,17 @@ export class InMemoryCatalogClient implements CatalogClient {
     this.shouldReject = value;
   }
 
-  async createProcessingRequest(
+  createProcessingRequest(
     ownerUserId: string,
     sourceStorageKey: string,
   ): Promise<string> {
     if (this.shouldReject) {
-      throw new Error('Catalog rejected creation');
+      return Promise.reject(new Error('Catalog rejected creation'));
     }
 
     this.idSequence += 1;
-    return `pr-${ownerUserId}-${sourceStorageKey}-${this.idSequence}`;
+    return Promise.resolve(
+      `pr-${ownerUserId}-${sourceStorageKey}-${this.idSequence}`,
+    );
   }
 }

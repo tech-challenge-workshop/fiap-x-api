@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import request from 'supertest';
+import request, { Response } from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { CATALOG_CLIENT } from './../src/processing-requests/services/create-processing-request.service';
@@ -37,9 +37,10 @@ describe('CreateProcessingRequestController (e2e)', () => {
         sourceStorageKey: 'videos/clip.mp4',
       })
       .expect(201)
-      .expect((res) => {
-        expect(res.body.processingRequestId).toContain('user-123');
-        expect(res.body.processingRequestId).toContain('videos/clip.mp4');
+      .expect((res: Response) => {
+        const body = res.body as { processingRequestId: string };
+        expect(body.processingRequestId).toContain('user-123');
+        expect(body.processingRequestId).toContain('videos/clip.mp4');
       });
   });
 

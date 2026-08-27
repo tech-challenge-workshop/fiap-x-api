@@ -30,7 +30,7 @@ describe('CreateProcessingRequestService', () => {
   });
 
   it('delegates creation to catalog client and returns id', async () => {
-    jest
+    const createProcessingRequestSpy = jest
       .spyOn(catalogClient, 'createProcessingRequest')
       .mockResolvedValue('pr-123');
 
@@ -39,7 +39,7 @@ describe('CreateProcessingRequestService', () => {
       sourceStorageKey: 'videos/clip.mp4',
     });
 
-    expect(catalogClient.createProcessingRequest).toHaveBeenCalledWith(
+    expect(createProcessingRequestSpy).toHaveBeenCalledWith(
       'user-123',
       'videos/clip.mp4',
     );

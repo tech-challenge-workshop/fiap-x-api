@@ -14,7 +14,7 @@ export class CatalogErrorFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const status = exception.getStatus();
 
-    if (status === HttpStatus.BAD_GATEWAY) {
+    if (status === Number(HttpStatus.BAD_GATEWAY)) {
       response.status(HttpStatus.BAD_GATEWAY).json({
         statusCode: HttpStatus.BAD_GATEWAY,
         message: 'Catalog rejected creation',
