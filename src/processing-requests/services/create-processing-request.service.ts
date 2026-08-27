@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { CatalogClient } from '../ports/catalog-client.port';
+import type { CatalogClient } from '../ports/catalog-client.port';
 import { CreateProcessingRequestDto } from '../dtos/create-processing-request.dto';
 import { CreateProcessingRequestResponseDto } from '../dtos/create-processing-request-response.dto';
 

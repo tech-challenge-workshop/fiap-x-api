@@ -225,9 +225,9 @@ Run in order: T8.
 
 **Done when**:
 
-- [ ] `ValidationPipe` is enabled globally with `whitelist: true` and sensible defaults.
-- [ ] No TypeScript errors.
-- [ ] Gate check passes: `npm run build`
+- [x] `ValidationPipe` is enabled globally with `whitelist: true` and sensible defaults.
+- [x] No TypeScript errors.
+- [x] Gate check passes: `npm run build`
 
 **Tests**: none
 **Gate**: build
