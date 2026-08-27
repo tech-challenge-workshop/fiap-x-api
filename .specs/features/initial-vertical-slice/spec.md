@@ -51,9 +51,9 @@ The API must start the FIAP X flow without taking ownership of processing state.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| API-01 | P1: Delegate request creation | Tasks | Pending |
+| API-01 | P1: Delegate request creation | Tasks | Done |
 | API-02 | P1: Delegate request creation | Tasks | Pending |
-| API-03 | P1: Delegate request creation | Tasks | Pending |
+| API-03 | P1: Delegate request creation | Tasks | Done |
 | API-04 | P1: Delegate request creation | Tasks | Pending |
 
 **Coverage:** 4 total, 4 mapped to future tasks, 0 unmapped.

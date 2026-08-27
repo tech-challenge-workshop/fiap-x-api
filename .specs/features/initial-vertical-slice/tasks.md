@@ -78,9 +78,9 @@ Run in order: T8.
 
 **Done when**:
 
-- [ ] DTO exists with both fields and non-empty string validation.
-- [ ] Unit tests exercise valid input and missing-field errors.
-- [ ] Gate check passes: `npm test`
+- [x] DTO exists with both fields and non-empty string validation.
+- [x] Unit tests exercise valid input and missing-field errors.
+- [x] Gate check passes: `npm test`
 
 **Tests**: unit
 **Gate**: quick
