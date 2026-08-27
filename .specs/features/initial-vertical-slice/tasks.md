@@ -102,9 +102,9 @@ Run in order: T8.
 
 **Done when**:
 
-- [ ] DTO exists and is exported.
-- [ ] No TypeScript errors.
-- [ ] Gate check passes: `npm run build`
+- [x] DTO exists and is exported.
+- [x] No TypeScript errors.
+- [x] Gate check passes: `npm run build`
 
 **Tests**: none
 **Gate**: build
