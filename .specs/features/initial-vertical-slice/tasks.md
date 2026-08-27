@@ -126,9 +126,9 @@ Run in order: T8.
 
 **Done when**:
 
-- [ ] Interface defines the creation boundary.
-- [ ] No TypeScript errors.
-- [ ] Gate check passes: `npm run build`
+- [x] Interface defines the creation boundary.
+- [x] No TypeScript errors.
+- [x] Gate check passes: `npm run build`
 
 **Tests**: none
 **Gate**: build
