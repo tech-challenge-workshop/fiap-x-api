@@ -150,9 +150,9 @@ Run in order: T8.
 
 **Done when**:
 
-- [ ] Adapter implements `CatalogClient`.
-- [ ] Unit tests cover success and rejection paths.
-- [ ] Gate check passes: `npm test`
+- [x] Adapter implements `CatalogClient`.
+- [x] Unit tests cover success and rejection paths.
+- [x] Gate check passes: `npm test`
 
 **Tests**: unit
 **Gate**: quick
