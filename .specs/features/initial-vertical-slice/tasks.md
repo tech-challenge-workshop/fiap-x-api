@@ -174,11 +174,11 @@ Run in order: T8.
 
 **Done when**:
 
-- [ ] Service calls the Catalog port with the owner and source key.
-- [ ] Service returns a response DTO with the Catalog-provided ID.
-- [ ] Service does not change or expose processing status.
-- [ ] Unit tests cover valid request, Catalog rejection, and adapter errors.
-- [ ] Gate check passes: `npm test`
+- [x] Service calls the Catalog port with the owner and source key.
+- [x] Service returns a response DTO with the Catalog-provided ID.
+- [x] Service does not change or expose processing status.
+- [x] Unit tests cover valid request, Catalog rejection, and adapter errors.
+- [x] Gate check passes: `npm test`
 
 **Tests**: unit
 **Gate**: quick
