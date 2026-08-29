@@ -64,7 +64,7 @@ async function waitForCatalogStatus(id) {
 async function waitForNotificationDelivery(id) {
   const deadline = Date.now() + POLL_TIMEOUT_MS;
   while (Date.now() < deadline) {
-    const res = await fetch(`${NOTIFICATION_URL}/deliveries/${id}`);
+    const res = await fetch(`${NOTIFICATION_URL}/local/deliveries/${id}`);
     if (res.status === 200) return await res.json();
     if (res.status === 404) {
       await sleep(POLL_INTERVAL_MS);
