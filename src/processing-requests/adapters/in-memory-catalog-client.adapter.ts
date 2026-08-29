@@ -1,4 +1,5 @@
 import { CatalogClient } from '../ports/catalog-client.port';
+import { CatalogUnavailableError } from '../errors/catalog-unavailable.error';
 
 export class InMemoryCatalogClient implements CatalogClient {
   private idSequence = 0;
@@ -11,14 +12,17 @@ export class InMemoryCatalogClient implements CatalogClient {
   createProcessingRequest(
     ownerUserId: string,
     sourceStorageKey: string,
-  ): Promise<string> {
+  ): Promise<{ processingRequestId: string; status: string }> {
     if (this.shouldReject) {
-      return Promise.reject(new Error('Catalog rejected creation'));
+      return Promise.reject(
+        new CatalogUnavailableError('Catalog rejected creation'),
+      );
     }
 
     this.idSequence += 1;
-    return Promise.resolve(
-      `pr-${ownerUserId}-${sourceStorageKey}-${this.idSequence}`,
-    );
+    return Promise.resolve({
+      processingRequestId: `pr-${ownerUserId}-${sourceStorageKey}-${this.idSequence}`,
+      status: 'RECEIVED',
+    });
   }
 }
