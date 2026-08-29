@@ -23,9 +23,7 @@ describe('CreateProcessingRequestController (e2e)', () => {
         transform: true,
       }),
     );
-    catalogClient = moduleFixture.get<CATALOG_CLIENT>(
-      CATALOG_CLIENT,
-    ) as InMemoryCatalogClient;
+    catalogClient = moduleFixture.get<InMemoryCatalogClient>(CATALOG_CLIENT);
     await app.init();
   });
 
@@ -38,9 +36,13 @@ describe('CreateProcessingRequestController (e2e)', () => {
       })
       .expect(201)
       .expect((res: Response) => {
-        const body = res.body as { processingRequestId: string };
+        const body = res.body as {
+          processingRequestId: string;
+          status: string;
+        };
         expect(body.processingRequestId).toContain('user-123');
         expect(body.processingRequestId).toContain('videos/clip.mp4');
+        expect(body.status).toBe('RECEIVED');
       });
   });
 
