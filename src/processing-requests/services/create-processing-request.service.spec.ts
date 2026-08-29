@@ -5,6 +5,7 @@ import {
   CATALOG_CLIENT,
 } from './create-processing-request.service';
 import { CatalogClient } from '../ports/catalog-client.port';
+import { CatalogUnavailableError } from '../errors/catalog-unavailable.error';
 
 describe('CreateProcessingRequestService', () => {
   let service: CreateProcessingRequestService;
@@ -29,10 +30,13 @@ describe('CreateProcessingRequestService', () => {
     catalogClient = module.get<CatalogClient>(CATALOG_CLIENT);
   });
 
-  it('delegates creation to catalog client and returns id', async () => {
+  it('delegates creation to catalog client and returns the response', async () => {
     const createProcessingRequestSpy = jest
       .spyOn(catalogClient, 'createProcessingRequest')
-      .mockResolvedValue('pr-123');
+      .mockResolvedValue({
+        processingRequestId: 'pr-123',
+        status: 'RECEIVED',
+      });
 
     const result = await service.execute({
       ownerUserId: 'user-123',
@@ -43,21 +47,41 @@ describe('CreateProcessingRequestService', () => {
       'user-123',
       'videos/clip.mp4',
     );
-    expect(result).toEqual({ processingRequestId: 'pr-123' });
+    expect(result).toEqual({
+      processingRequestId: 'pr-123',
+      status: 'RECEIVED',
+    });
   });
 
-  it('maps catalog client rejection to HTTP 502', async () => {
+  it('maps CatalogUnavailableError to HTTP 502', async () => {
     jest
       .spyOn(catalogClient, 'createProcessingRequest')
-      .mockRejectedValue(new Error('Catalog rejected creation'));
+      .mockRejectedValue(new CatalogUnavailableError());
+
+    try {
+      await service.execute({
+        ownerUserId: 'user-123',
+        sourceStorageKey: 'videos/clip.mp4',
+      });
+      fail('expected HttpException');
+    } catch (error) {
+      expect(error).toBeInstanceOf(HttpException);
+      const httpException = error as HttpException;
+      expect(httpException.getStatus()).toBe(HttpStatus.BAD_GATEWAY);
+      expect(httpException.message).toBe('Catalog unavailable');
+    }
+  });
+
+  it('lets unexpected errors propagate as HTTP 500', async () => {
+    jest
+      .spyOn(catalogClient, 'createProcessingRequest')
+      .mockRejectedValue(new Error('unexpected boom'));
 
     await expect(
       service.execute({
         ownerUserId: 'user-123',
         sourceStorageKey: 'videos/clip.mp4',
       }),
-    ).rejects.toMatchObject(
-      new HttpException('Catalog rejected creation', HttpStatus.BAD_GATEWAY),
-    );
+    ).rejects.toThrow('unexpected boom');
   });
 });
