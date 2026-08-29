@@ -1,0 +1,13 @@
+node_modules
+dist
+.git
+.specs
+coverage
+test
+*.md
+.env
+.env.*
+Dockerfile
+compose.yaml
+._*
+**/._*
