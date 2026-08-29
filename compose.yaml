@@ -65,6 +65,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:4-management-alpine
+    user: "0:0"
     ports:
       - "5672:5672"
       - "15672:15672"
