@@ -2,5 +2,5 @@ export interface CatalogClient {
   createProcessingRequest(
     ownerUserId: string,
     sourceStorageKey: string,
-  ): Promise<string>;
+  ): Promise<{ processingRequestId: string; status: string }>;
 }
