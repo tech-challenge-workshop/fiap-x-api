@@ -91,9 +91,9 @@ Run in order: T13.
 
 **Done when**:
 
-- [ ] Interface returns `Promise<{ processingRequestId: string; status: string }>`.
-- [ ] No TypeScript errors.
-- [ ] Gate check passes: `npm run build`
+- [x] Interface returns `Promise<{ processingRequestId: string; status: string }>`.
+- [x] No TypeScript errors.
+- [x] Gate check passes: `npm run build`
 
 **Tests**: none
 **Gate**: build
@@ -115,9 +115,9 @@ Run in order: T13.
 
 **Done when**:
 
-- [ ] DTO includes both fields.
-- [ ] Unit test asserts response shape.
-- [ ] Gate check passes: `npm test`
+- [x] DTO includes both fields.
+- [x] Unit test asserts response shape.
+- [x] Gate check passes: `npm test`
 
 **Tests**: unit
 **Gate**: quick
@@ -139,9 +139,9 @@ Run in order: T13.
 
 **Done when**:
 
-- [ ] Stub implements the new port shape.
-- [ ] Unit tests cover success and rejection.
-- [ ] Gate check passes: `npm test`
+- [x] Stub implements the new port shape.
+- [x] Unit tests cover success and rejection.
+- [x] Gate check passes: `npm test`
 
 **Tests**: unit
 **Gate**: quick
@@ -163,10 +163,10 @@ Run in order: T13.
 
 **Done when**:
 
-- [ ] Adapter implements `CatalogClient`.
-- [ ] Constructor receives `catalogBaseUrl`.
-- [ ] Unit tests cover success, non-2xx, network failure, and malformed JSON.
-- [ ] Gate check passes: `npm test`
+- [x] Adapter implements `CatalogClient`.
+- [x] Constructor receives `catalogBaseUrl`.
+- [x] Unit tests cover success, non-2xx, network failure, and malformed JSON.
+- [x] Gate check passes: `npm test`
 
 **Tests**: unit
 **Gate**: quick
@@ -188,10 +188,10 @@ Run in order: T13.
 
 **Done when**:
 
-- [ ] Service returns the adapter result directly.
-- [ ] `CatalogUnavailableError` maps to `HttpException(502)`.
-- [ ] Unexpected errors propagate unmodified.
-- [ ] Gate check passes: `npm test`
+- [x] Service returns the adapter result directly.
+- [x] `CatalogUnavailableError` maps to `HttpException(502)`.
+- [x] Unexpected errors propagate unmodified.
+- [x] Gate check passes: `npm test`
 
 **Tests**: unit
 **Gate**: quick
@@ -213,9 +213,9 @@ Run in order: T13.
 
 **Done when**:
 
-- [ ] Test asserts `err.getStatus() === 502`.
-- [ ] Test asserts `err.message === 'Catalog unavailable'`.
-- [ ] Gate check passes: `npm test`
+- [x] Test asserts `err.getStatus() === 502`.
+- [x] Test asserts `err.message === 'Catalog unavailable'`.
+- [x] Gate check passes: `npm test`
 
 **Tests**: unit
 **Gate**: quick
@@ -237,9 +237,9 @@ Run in order: T13.
 
 **Done when**:
 
-- [ ] Generic parameter is a concrete TypeScript type.
-- [ ] `npx tsc --noEmit -p tsconfig.json` exits 0.
-- [ ] `npm run test:e2e` still passes.
+- [x] Generic parameter is a concrete TypeScript type.
+- [x] `npx tsc --noEmit -p tsconfig.json` exits 0.
+- [x] `npm run test:e2e` still passes.
 
 **Tests**: e2e
 **Gate**: full
@@ -261,9 +261,9 @@ Run in order: T13.
 
 **Done when**:
 
-- [ ] `GET /health` returns 200.
-- [ ] Controller has no external dependency checks.
-- [ ] Gate check passes: `npm test` or `npm run test:e2e`
+- [x] `GET /health` returns 200.
+- [x] Controller has no external dependency checks.
+- [x] Gate check passes: `npm test` or `npm run test:e2e`
 
 **Tests**: unit or e2e
 **Gate**: quick / full
@@ -285,9 +285,9 @@ Run in order: T13.
 
 **Done when**:
 
-- [ ] Module reads `process.env.CATALOG_BASE_URL`.
-- [ ] Unit/e2e tests still use the in-memory path when env is unset.
-- [ ] Gate check passes: `npm test && npm run test:e2e`
+- [x] Module reads `process.env.CATALOG_BASE_URL`.
+- [x] Unit/e2e tests still use the in-memory path when env is unset.
+- [x] Gate check passes: `npm test && npm run test:e2e`
 
 **Tests**: e2e
 **Gate**: full
@@ -309,9 +309,9 @@ Run in order: T13.
 
 **Done when**:
 
-- [ ] `docker build . -t fiapx-api:local` succeeds.
-- [ ] Image exposes port 3000 and runs `node dist/main`.
-- [ ] Build context excludes `node_modules`, `dist`, `.git`, `.specs`, tests.
+- [x] `docker build . -t fiapx-api:local` succeeds.
+- [x] Image exposes port 3000 and runs `node dist/main`.
+- [x] Build context excludes `node_modules`, `dist`, `.git`, `.specs`, tests.
 
 **Tests**: none
 **Gate**: docker
@@ -333,10 +333,10 @@ Run in order: T13.
 
 **Done when**:
 
-- [ ] `api` builds from repo root and depends on healthy `catalog` and `rabbitmq`.
-- [ ] Sibling services build from `../processing-catalog`, `../processing-worker`, `../notification-service`.
-- [ ] RabbitMQ service has a health check.
-- [ ] API environment sets `CATALOG_BASE_URL=http://catalog:3001`.
+- [x] `api` builds from repo root and depends on healthy `catalog` and `rabbitmq`.
+- [x] Sibling services build from `../processing-catalog`, `../processing-worker`, `../notification-service`.
+- [x] RabbitMQ service has a health check.
+- [x] API environment sets `CATALOG_BASE_URL=http://catalog:3001`.
 
 **Tests**: none
 **Gate**: docker
@@ -358,11 +358,11 @@ Run in order: T13.
 
 **Done when**:
 
-- [ ] Script waits for API health.
-- [ ] Script posts to `/processing-requests` and captures `processingRequestId`.
-- [ ] Script polls Catalog request-state endpoint until `COMPLETED`.
-- [ ] Script polls Notification delivery endpoint until a record exists.
-- [ ] Script exits non-zero on timeout or failure.
+- [x] Script waits for API health.
+- [x] Script posts to `/processing-requests` and captures `processingRequestId`.
+- [x] Script polls Catalog request-state endpoint until `COMPLETED`.
+- [x] Script polls Notification delivery endpoint until a record exists.
+- [x] Script exits non-zero on timeout or failure.
 
 **Tests**: smoke
 **Gate**: smoke
@@ -384,12 +384,12 @@ Run in order: T13.
 
 **Done when**:
 
-- [ ] `npm run build` passes.
-- [ ] `npm run lint` passes with no new warnings.
-- [ ] `npm test` passes.
-- [ ] `npm run test:e2e` passes.
-- [ ] `docker compose up --build --wait` starts all services.
-- [ ] `node scripts/smoke-local-integration.mjs` exits 0.
+- [x] `npm run build` passes.
+- [x] `npm run lint` passes with no new warnings.
+- [x] `npm test` passes.
+- [x] `npm run test:e2e` passes.
+- [x] `docker compose up --build --wait` starts all services.
+- [x] `node scripts/smoke-local-integration.mjs` exits 0.
 
 **Tests**: all
 **Gate**: smoke

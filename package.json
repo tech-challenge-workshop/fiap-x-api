@@ -67,6 +67,13 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
+    "coveragePathIgnorePatterns": [
+      "/\\._"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/\\._"
+    ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }

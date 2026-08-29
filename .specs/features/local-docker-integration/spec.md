@@ -6,9 +6,9 @@ API currently creates requests through an in-memory Catalog adapter. It must bec
 
 ## Goals
 
-- [ ] Call Catalog through configurable local HTTP and return its creation result.
-- [ ] Own the Compose entrypoint, smoke script, API container, and API readiness endpoint.
-- [ ] Close API verifier findings while preserving local DTOs and no AWS integration.
+- [x] Call Catalog through configurable local HTTP and return its creation result.
+- [x] Own the Compose entrypoint, smoke script, API container, and API readiness endpoint.
+- [x] Close API verifier findings while preserving local DTOs and no AWS integration.
 
 ## Out of Scope
 
@@ -60,15 +60,15 @@ API currently creates requests through an in-memory Catalog adapter. It must bec
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| API-01 | P1 | Design | Pending |
-| API-02 | P1 | Design | Pending |
-| API-03 | P1 | Design | Pending |
-| API-04 | P1 | Design | Pending |
-| API-05 | P1 | Design | Pending |
-| API-06 | P2 | Design | Pending |
-| API-07 | P2 | Design | Pending |
+| API-01 | P1 | Design | Verified |
+| API-02 | P1 | Design | Verified |
+| API-03 | P1 | Design | Verified |
+| API-04 | P1 | Design | Verified |
+| API-05 | P1 | Design | Verified |
+| API-06 | P2 | Design | Verified |
+| API-07 | P2 | Design | Verified |
 
 ## Success Criteria
 
-- [ ] API Compose smoke path proves real HTTP request creation and terminal observations.
-- [ ] API build, lint, unit, and e2e gates pass without warnings.
+- [x] API Compose smoke path proves real HTTP request creation and terminal observations.
+- [x] API build, lint, unit, and e2e gates pass without warnings.
