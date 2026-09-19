@@ -27,4 +27,4 @@ NestJS and TypeScript, an OIDC identity provider (Keycloak locally), and S3-comp
 
 ## Source of truth
 
-This foundation reflects `docs/foudation.md`, `docs/FIAP X.pdf`, and `docs/POSTECH - SOAT - Fase 5 - Hacka.pdf` in the parent workspace. It is not a product implementation.
+This foundation reflects `docs/foudation.md` and the reference documents in the `fiap-x-platform` repository. It is not a product implementation.
