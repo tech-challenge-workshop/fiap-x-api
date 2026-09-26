@@ -9,7 +9,7 @@ export interface TokenVerifierOptions {
 /**
  * Verifies a compact JWT and returns its `sub` and nothing else, so no other
  * claim can reach an authorization decision (AC P1.9). `exp`, `iss` and
- * `aud` are enforced by `jwtVerify`.
+ * `aud` are enforced by `jwtVerify`, and a token without `exp` is refused.
  */
 export class TokenVerifier {
   constructor(
@@ -22,7 +22,8 @@ export class TokenVerifier {
       issuer: this.options.issuer,
       audience: this.options.audience,
       algorithms: ['RS256'],
-      requiredClaims: ['sub'],
+      // Without `exp` a leaked token would never expire.
+      requiredClaims: ['exp', 'sub'],
     });
     if (typeof payload.sub !== 'string' || payload.sub === '') {
       throw new errors.JWTClaimValidationFailed(

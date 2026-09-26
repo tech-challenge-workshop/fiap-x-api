@@ -1,4 +1,4 @@
-import { errors, SignJWT, UnsecuredJWT } from 'jose';
+import { decodeJwt, errors, SignJWT, UnsecuredJWT } from 'jose';
 import {
   createSigningKey,
   JwksServer,
@@ -130,6 +130,13 @@ describe('TokenVerifier', () => {
     const token = await signToken(key, { sub: undefined });
 
     expect(await claimFailure(token)).toBe('sub');
+  });
+
+  it('rejects a validly signed token without exp, which would never expire (edge case)', async () => {
+    const token = await signToken(key, { exp: undefined });
+    expect(decodeJwt(token)).not.toHaveProperty('exp');
+
+    expect(await claimFailure(token)).toBe('exp');
   });
 
   it.each([42, '', { id: 'alice' }])(

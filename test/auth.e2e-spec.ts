@@ -121,6 +121,10 @@ describe('Authentication (e2e)', () => {
       'a token without sub (AC P1.6)',
       async () => `Bearer ${await idp.token({ sub: undefined })}`,
     ],
+    [
+      'a validly signed token without exp (edge case)',
+      async () => `Bearer ${await idp.token({ exp: undefined })}`,
+    ],
   ])('responds 401 without calling the Catalog for %s', async (_, header) => {
     const res = await create(await header());
 
