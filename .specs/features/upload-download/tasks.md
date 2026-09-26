@@ -279,15 +279,23 @@ Existing suites changed, setup only, no assertion touched:
 - Skill: NONE
 
 **Done when**:
-- [ ] e2e: 201 then 200 with the same id for a replay; the Catalog receives the owner's `sub`, the generated key and the client's key
-- [ ] 409 for the key on a second upload; 400 for missing/blank/over-long key; 400 when no part was uploaded; 400 naming the size when the real size differs, with the object deleted and no Catalog call
-- [ ] 404 for another user's `uploadId`, a random UUID, a malformed id, and an upload discarded before confirmation
-- [ ] Two concurrent confirmations → one Catalog request id in both responses
-- [ ] Storage or Catalog failure → 502; a retry after a Catalog failure still yields one request
-- [ ] Full gate passes
+- [x] e2e: 201 then 200 with the same id for a replay; the Catalog receives the owner's `sub`, the generated key and the client's key
+- [x] 409 for the key on a second upload; 400 for missing/blank/over-long key; 400 when no part was uploaded; 400 naming the size when the real size differs, with the object deleted and no Catalog call
+- [x] 404 for another user's `uploadId`, a random UUID, a malformed id, and an upload discarded before confirmation
+- [x] Two concurrent confirmations → one Catalog request id in both responses
+- [x] Storage or Catalog failure → 502; a retry after a Catalog failure still yields one request
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
+
+**Status**: ✅ Complete. `test/complete-upload.e2e-spec.ts` adds 21 tests (e2e 96 → 117, 0 skipped; unit 147 unchanged).
+- `CompleteUploadService` follows the design algorithm. The `Idempotency-Key` is checked first, before storage is touched: missing, empty or blank → 400 "Idempotency-Key header is required"; over 255 characters or not printable ASCII → 400. A non-UUID `uploadId` → 404 before storage is touched. A `listParts` of `'gone'` falls through exactly like a `complete` of `'gone'`.
+- Concurrency is tested deterministically, both ways a loser can meet the winner. A barrier holds both confirmations inside `complete`, so the outcomes are `completed` and `gone`, and the responses are 201 and 200 with one id. In the other test, the second confirmation runs to the end inside the first one's `listParts`.
+- Retry after failure: the Catalog down, and storage failing once in `listParts`, `complete` and `findObject`. Each gives 502, then 201 on retry, with exactly one request.
+- Scratch mutants were run and then restored. Four were killed: treating `listParts` `'gone'` as 404, treating `complete` `'gone'` as 404, not deleting the mismatched object, and dropping the UUID check. The UUID-check mutant was the one that survived at first, which is why a test now pins that a malformed id never reaches storage.
+- **Interpretation:** the 404 body is `{statusCode:404, message:'Upload not found'}`, the same for all four causes. I read design's "constant 404" as that rule rather than S5's request-specific text.
+- `ProcessingRequestsModule` exports `CATALOG_CLIENT`; `UploadsModule` imports it. `test/support/upload-flow.ts` starts, uploads and confirms through the API for later suites.
 
 ---
 

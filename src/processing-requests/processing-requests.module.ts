@@ -25,5 +25,6 @@ const catalogClientProvider = {
     GetOwnProcessingRequestService,
     catalogClientProvider,
   ],
+  exports: [CATALOG_CLIENT],
 })
 export class ProcessingRequestsModule {}
