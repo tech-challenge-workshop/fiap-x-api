@@ -116,13 +116,20 @@ T10
 
 **Done when**:
 
-- [ ] Undersized parts → `400` with the exact message; the Catalog receives no call; a second confirmation → `404 Upload not found`
-- [ ] An abort that throws still gives `400`, and the log holds the error name only
-- [ ] Any other completion failure → `502 Storage unavailable` (unchanged)
-- [ ] Full gate passes
+- [x] Undersized parts → `400` with the exact message; the Catalog receives no call; a second confirmation → `404 Upload not found`
+- [x] An abort that throws still gives `400`, and the log holds the error name only
+- [x] Any other completion failure → `502 Storage unavailable` (unchanged)
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
+
+**Status**: ✅ Complete. E2e 131 → 134, unit 144 unchanged, 0 skipped.
+- `test/complete-upload.e2e-spec.ts` adds a `parts storage refuses (HARD-01)` group: 1 byte then 4 MiB → `400` with the exact message, no Catalog call, no upload in progress and no object, then `404 Upload not found`; the near-miss 5 MiB then 1 byte → `201`; an abort that throws an error named `AbortFailedError` → still `400`, the log holds the name and neither the message, the key nor the storage upload id.
+- The `502` criterion is the existing `answers 502 when storage fails in %s` case with `complete` rejecting `StorageUnavailableError`; it still passes unchanged.
+- The message is built from `PART_SIZE_BYTES`; the tests assert the literal `16777216`.
+- Existing tests changed: none.
+- Negatives (scratch copy, restored): without the abort call 2 tests fail; logging the error message too, or letting the abort error propagate, fails the abort-failure test; `PART_SIZE_BYTES / 2` in the message fails 2 tests.
 
 ---
 

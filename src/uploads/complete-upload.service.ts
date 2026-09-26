@@ -5,6 +5,7 @@ import {
   HttpStatus,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { UPLOAD_STORAGE } from '../storage/upload-storage.port';
@@ -15,6 +16,7 @@ import type {
   CatalogCreateOutcome,
 } from '../processing-requests/ports/catalog-client.port';
 import { CatalogUnavailableError } from '../processing-requests/errors/catalog-unavailable.error';
+import { PART_SIZE_BYTES } from './start-upload.service';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const PRINTABLE_ASCII = /^[\x20-\x7E]{1,255}$/;
@@ -39,6 +41,8 @@ const uploadNotFound = () => new NotFoundException('Upload not found');
  */
 @Injectable()
 export class CompleteUploadService {
+  private readonly logger = new Logger(CompleteUploadService.name);
+
   constructor(
     @Inject(UPLOAD_STORAGE) private readonly storage: UploadStorage,
     @Inject(CATALOG_CLIENT) private readonly catalog: CatalogClient,
@@ -75,11 +79,17 @@ export class CompleteUploadService {
         if (parts.length === 0) {
           throw new BadRequestException('No part has been uploaded');
         }
-        await this.storage.complete(
+        const completed = await this.storage.complete(
           inProgress.key,
           inProgress.storageUploadId,
           parts,
         );
+        if (completed === 'rejected') {
+          await this.discard(inProgress.key, inProgress.storageUploadId);
+          throw new BadRequestException(
+            `Uploaded parts are invalid: every part except the last must be ${PART_SIZE_BYTES} bytes`,
+          );
+        }
       }
     }
 
@@ -105,6 +115,19 @@ export class CompleteUploadService {
       processingRequestId: created.processingRequestId,
       status: created.status,
     };
+  }
+
+  /**
+   * Best effort: if the abort fails, the bucket's 1-day rule discards the
+   * upload. Only the error's name is logged; the rest may carry the key.
+   */
+  private async discard(key: string, storageUploadId: string): Promise<void> {
+    try {
+      await this.storage.abortMultipart(key, storageUploadId);
+    } catch (error) {
+      const name = (error as { name?: string })?.name ?? 'unknown';
+      this.logger.warn(`Aborting an upload with invalid parts failed: ${name}`);
+    }
   }
 
   private async create(
