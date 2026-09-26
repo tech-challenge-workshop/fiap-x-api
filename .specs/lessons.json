@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 10,
+  "next_id": 13,
   "lessons": [
     {
       "id": "L-001",
@@ -166,6 +166,60 @@
       ],
       "created": "2026-09-26T04:31:07Z",
       "last_seen": "2026-09-26T04:31:07Z"
+    },
+    {
+      "id": "L-010",
+      "key": "surviving_mutant::an in memory storage double must raise the same error types as the real adapter for client caused failures or e2e suites cannot see a 400 turning into a 502",
+      "text": "An in-memory storage double must raise the same error types as the real adapter for client-caused failures, or e2e suites cannot see a 400 turning into a 502.",
+      "signal": "surviving_mutant",
+      "scope": "storage",
+      "status": "candidate",
+      "features": [
+        "upload-download"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/storage/s3-upload-storage.ts:188 (storage)"
+      ],
+      "created": "2026-09-26T06:00:08Z",
+      "last_seen": "2026-09-26T06:00:08Z"
+    },
+    {
+      "id": "L-011",
+      "key": "surviving_mutant::a no secrets in logs test must capture every output channel console stdout stderr or enforce no console by lint not only the framework logger",
+      "text": "A no-secrets-in-logs test must capture every output channel (console, stdout, stderr) or enforce no-console by lint, not only the framework logger.",
+      "signal": "surviving_mutant",
+      "scope": "logging",
+      "status": "candidate",
+      "features": [
+        "upload-download"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "test/support/capturing-logger.ts (logging)"
+      ],
+      "created": "2026-09-26T06:00:08Z",
+      "last_seen": "2026-09-26T06:00:08Z"
+    },
+    {
+      "id": "L-012",
+      "key": "surviving_mutant::when two clients target two endpoints the test endpoints must reach different servers or one must be unreachable or routing mistakes pass",
+      "text": "When two clients target two endpoints, the test endpoints must reach different servers or one must be unreachable, or routing mistakes pass.",
+      "signal": "surviving_mutant",
+      "scope": "storage",
+      "status": "candidate",
+      "features": [
+        "upload-download"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/storage/s3-upload-storage.ts:77 (storage)"
+      ],
+      "created": "2026-09-26T06:00:08Z",
+      "last_seen": "2026-09-26T06:00:08Z"
     }
   ]
 }

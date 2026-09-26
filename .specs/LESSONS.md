@@ -68,6 +68,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: M42,M43 src/auth/jwt-auth.guard.ts:48,57
 - last seen: 2026-09-26T04:31:07Z
 
+### L-010 - An in-memory storage double must raise the same error types as the real adapter for client-caused failures, or e2e suites cannot see a 400 turning into a 502.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `storage` · harmful: 0
+- features: upload-download
+- evidence: src/storage/s3-upload-storage.ts:188 (storage)
+- last seen: 2026-09-26T06:00:08Z
+
+### L-011 - A no-secrets-in-logs test must capture every output channel (console, stdout, stderr) or enforce no-console by lint, not only the framework logger.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `logging` · harmful: 0
+- features: upload-download
+- evidence: test/support/capturing-logger.ts (logging)
+- last seen: 2026-09-26T06:00:08Z
+
+### L-012 - When two clients target two endpoints, the test endpoints must reach different servers or one must be unreachable, or routing mistakes pass.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `storage` · harmful: 0
+- features: upload-download
+- evidence: src/storage/s3-upload-storage.ts:77 (storage)
+- last seen: 2026-09-26T06:00:08Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
