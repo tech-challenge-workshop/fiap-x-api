@@ -394,12 +394,18 @@ T10
 
 **Done when**:
 
-- [ ] `npm run lint` passes on the tree
-- [ ] Literal negative: in a scratch copy, `console.log(url)` in `start-upload.service.ts` makes `npm run lint` fail naming `no-console`; the same line in `test/` does not
-- [ ] Build gate passes
+- [x] `npm run lint` passes on the tree
+- [x] Literal negative: in a scratch copy, `console.log(url)` in `start-upload.service.ts` makes `npm run lint` fail naming `no-console`; the same line in `test/` does not
+- [x] Build gate passes
 
 **Tests**: none
 **Gate**: build
+
+**Status**: ✅ Complete. Unit 150 and e2e 151 unchanged, 0 skipped with `STORAGE_TEST_ENDPOINT` set. Lint, typecheck and build are green.
+- `eslint.config.mjs` ends with a block for `src/**/*.ts` setting `'no-console': 'error'`. `src/` had no `console` call.
+- Literal negative (scratch copy, restored):
+  - `console.log(url)` for each part URL in `StartUploadService.execute` → `npm run lint` exits 1 with `60:7 error Unexpected console statement no-console`.
+  - The same line in `test/support/upload-flow.ts` → `npm run lint` exits 0.
 
 ---
 
