@@ -86,13 +86,14 @@ T11
 - Skill: NONE
 
 **Done when**:
-- [ ] `jose` pinned exactly; `test/jest-e2e.json` and the root Jest config transform it
-- [ ] A unit test and an e2e test can `import { jwtVerify } from 'jose'` (proved by the first test in T3)
-- [ ] The built app loads it: `node -e "require('./dist/main')"`-style check or requiring the built module that imports it
-- [ ] Build gate passes
+- [x] `jose` pinned exactly; `test/jest-e2e.json` and the root Jest config transform it
+- [x] A unit test and an e2e test can `import { jwtVerify } from 'jose'` (proved by the first test in T3)
+- [x] The built app loads it: `node -e "require('./dist/main')"`-style check or requiring the built module that imports it
+- [x] Build gate passes
 
 **Tests**: none
 **Gate**: build
+**Status**: ✅ Complete. A throwaway probe (not committed) imported `jose` under both Jest configs, passed `typecheck` and `build`, and the built module loaded with `require()` in Node 22. The permanent proof is T3's suite and T5's e2e suites.
 
 ---
 
