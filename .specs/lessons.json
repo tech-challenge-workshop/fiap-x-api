@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 5,
+  "next_id": 8,
   "lessons": [
     {
       "id": "L-001",
@@ -76,6 +76,60 @@
       ],
       "created": "2026-09-26T04:08:33Z",
       "last_seen": "2026-09-26T04:08:33Z"
+    },
+    {
+      "id": "L-005",
+      "key": "surviving_mutant::when faking time install fake timers before the code under test reads a clock or schedules a timer and fake every clock source not only date now",
+      "text": "When faking time, install fake timers before the code under test reads a clock or schedules a timer, and fake every clock source, not only Date.now",
+      "signal": "surviving_mutant",
+      "scope": "",
+      "status": "candidate",
+      "features": [
+        "auth-owner-scope"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M33 src/auth/signing-key-cache.ts:62; src/auth/signing-key-cache.spec.ts:61"
+      ],
+      "created": "2026-09-26T04:21:10Z",
+      "last_seen": "2026-09-26T04:21:10Z"
+    },
+    {
+      "id": "L-006",
+      "key": "surviving_mutant::cover a rule stated over a whole class of inputs with at least two representatives that differ in the other dimensions",
+      "text": "Cover a rule stated over a whole class of inputs with at least two representatives that differ in the other dimensions",
+      "signal": "surviving_mutant",
+      "scope": "",
+      "status": "candidate",
+      "features": [
+        "auth-owner-scope"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M38 src/auth/jwt-auth.guard.ts:20; test/auth.e2e-spec.ts:98-103"
+      ],
+      "created": "2026-09-26T04:21:10Z",
+      "last_seen": "2026-09-26T04:21:10Z"
+    },
+    {
+      "id": "L-007",
+      "key": "spec_precision_gap::state in the spec whether protocol tokens such as auth schemes match case sensitively",
+      "text": "State in the spec whether protocol tokens such as auth schemes match case-sensitively",
+      "signal": "spec_precision_gap",
+      "scope": "",
+      "status": "candidate",
+      "features": [
+        "auth-owner-scope"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "spec.md edge case non-Bearer; src/auth/jwt-auth.guard.ts:20"
+      ],
+      "created": "2026-09-26T04:21:10Z",
+      "last_seen": "2026-09-26T04:21:10Z"
     }
   ]
 }
