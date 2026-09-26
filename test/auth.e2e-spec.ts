@@ -95,6 +95,17 @@ describe('Authentication (e2e)', () => {
     expect(catalogCalls()).toBe(1);
   });
 
+  it.each<[string]>([['bearer'], ['BEARER']])(
+    'accepts the scheme written as %s and reaches the Catalog (AC P5.1)',
+    async (scheme) => {
+      const res = await callProtected(`${scheme} ${await idp.token()}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ items: [], page: 1, pageSize: 20, total: 0 });
+      expect(catalogCalls()).toBe(1);
+    },
+  );
+
   it.each<[string, () => Promise<string | undefined>]>([
     ['no Authorization header (AC P1.1)', () => Promise.resolve(undefined)],
     [
@@ -114,6 +125,7 @@ describe('Authentication (e2e)', () => {
       async () => `Token ${await idp.token()}`,
     ],
     ['Bearer with no token (AC P1.1)', () => Promise.resolve('Bearer ')],
+    ['Bearer alone (near-miss of AC P5.1)', () => Promise.resolve('Bearer')],
     [
       'a tampered token (AC P1.2)',
       async () => `Bearer ${tamperPayload(await idp.token())}`,

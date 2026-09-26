@@ -143,7 +143,7 @@ Decisions of 2026-09-26: V32 = `200` with the same request; V33 = `contentType` 
 | HARD-03 | P3: `contentType` is case-insensitive (V33) | Execute | Implementing (T5 done) |
 | HARD-04 | P4: Token never logged on the 503 and non-bearer paths (V21) | Execute | Implementing (T8 done) |
 | HARD-05 | P4: No console output (V29) | Tasks | In Tasks |
-| HARD-06 | P5: Bearer scheme case-insensitive, tested (V22) | Tasks | In Tasks |
+| HARD-06 | P5: Bearer scheme case-insensitive, tested (V22) | Execute | Implementing (T9 done) |
 | HARD-07 | P5: Internal and public storage clients, tested (V30) | Execute | Implementing (T4 done) |
 | HARD-08 | P5: `findObject` race and the key's character rule, tested (V31) | Execute | Implementing (T3, T7 done) |
 
