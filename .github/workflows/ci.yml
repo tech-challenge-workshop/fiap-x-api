@@ -24,7 +24,25 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test -- --coverage
+      # The S3 adapter's integration test needs a real endpoint, and fails
+      # rather than skips in CI when STORAGE_TEST_ENDPOINT is unset. Same
+      # server and development credentials as fiap-x-platform's compose
+      # (AD-014). The test defaults to those credentials and creates its
+      # own bucket.
+      - name: Start RustFS for the storage integration test
+        run: |
+          docker run -d --name storage -p 9000:9000 \
+            -e RUSTFS_ACCESS_KEY=fiapx-dev -e RUSTFS_SECRET_KEY=fiapx-dev-secret \
+            rustfs/rustfs:1.0.0
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:9000/health && exit 0
+            sleep 1
+          done
+          docker logs storage
+          exit 1
       - run: npm run test:e2e
+        env:
+          STORAGE_TEST_ENDPOINT: http://localhost:9000
       - run: npm run build
       - name: Upload coverage summary
         if: always()
