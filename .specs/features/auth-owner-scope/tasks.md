@@ -268,13 +268,18 @@ T12
 - Skill: NONE
 
 **Done when**:
-- [ ] e2e: as `alice` with `ownerUserId: "bob"` in the body → 201 and the Catalog client receives `alice`'s `sub`; without the field → 201
-- [ ] The response has no `sourceStorageKey`; `sourceStorageKey` still required (400 when missing)
-- [ ] Catalog unavailable → 502 (existing behaviour kept)
-- [ ] Full gate passes
+- [x] e2e: as `alice` with `ownerUserId: "bob"` in the body → 201 and the Catalog client receives `alice`'s `sub`; without the field → 201
+- [x] The response has no `sourceStorageKey`; `sourceStorageKey` still required (400 when missing)
+- [x] Catalog unavailable → 502 (existing behaviour kept)
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
+**Status**: ✅ Complete. e2e 24 → 25, unit unchanged at 80.
+- `ProcessingRequestsController` replaces `CreateProcessingRequestController`; `create` passes `@Owner()` to `CreateProcessingRequestService.execute(owner, dto)`, which returns only `{ processingRequestId, status }`.
+- That projection matters: the real Catalog's creation response also carries `ownerUserId`, `sourceStorageKey` and `createdAt`, and the old code returned it whole. The in-memory client now returns the same whole record, so `test/processing-requests.e2e-spec.ts:84` (`toEqual({ processingRequestId, status: 'RECEIVED' })`) fails if the API passes it through.
+- Evidence: `:82` the Catalog client receives `'alice'` for a body naming `bob`; `:89-92` the request is listed under `alice` and `bob` has none; `:63-70` no `ownerUserId` → 201; `:95-102` no `sourceStorageKey` → 400; `:113-123` → 502.
+- Tests whose assertions encoded the superseded contract (owner from the body) were rewritten to the new one, with no count change: `create-processing-request.dto.spec.ts` (missing and empty `ownerUserId` now accepted; an empty body names only `sourceStorageKey`), `create-processing-request.service.spec.ts` (the owner is the first argument; it asserts `'alice'` reaches the client, not the body's `'user-123'`), and `test/processing-requests.e2e-spec.ts` (`returns 400 when ownerUserId is missing` became `returns 201 ...`, the Done-when above; the id now contains `alice`, not `user-123`).
 
 ---
 

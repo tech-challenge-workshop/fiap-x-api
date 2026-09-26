@@ -14,18 +14,17 @@ describe('CreateProcessingRequestDto', () => {
     expect(errors).toHaveLength(0);
   });
 
-  it('rejects missing ownerUserId', async () => {
+  it('accepts a body without ownerUserId, which is no longer read (AC P2.2)', async () => {
     const dto = plainToInstance(CreateProcessingRequestDto, {
       sourceStorageKey: 'videos/clip.mp4',
     });
 
     const errors = await validate(dto);
 
-    expect(errors).toHaveLength(1);
-    expect(errors[0].property).toBe('ownerUserId');
+    expect(errors).toHaveLength(0);
   });
 
-  it('rejects empty ownerUserId', async () => {
+  it('accepts an empty ownerUserId, which is no longer read (AC P2.2)', async () => {
     const dto = plainToInstance(CreateProcessingRequestDto, {
       ownerUserId: '',
       sourceStorageKey: 'videos/clip.mp4',
@@ -33,8 +32,7 @@ describe('CreateProcessingRequestDto', () => {
 
     const errors = await validate(dto);
 
-    expect(errors).toHaveLength(1);
-    expect(errors[0].property).toBe('ownerUserId');
+    expect(errors).toHaveLength(0);
   });
 
   it('rejects missing sourceStorageKey', async () => {
@@ -60,11 +58,12 @@ describe('CreateProcessingRequestDto', () => {
     expect(errors[0].property).toBe('sourceStorageKey');
   });
 
-  it('rejects missing both fields', async () => {
+  it('rejects missing both fields, naming only sourceStorageKey', async () => {
     const dto = plainToInstance(CreateProcessingRequestDto, {});
 
     const errors = await validate(dto);
 
-    expect(errors).toHaveLength(2);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].property).toBe('sourceStorageKey');
   });
 });

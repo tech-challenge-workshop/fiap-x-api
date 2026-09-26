@@ -14,13 +14,16 @@ export class CreateProcessingRequestService {
   ) {}
 
   async execute(
+    ownerUserId: string,
     dto: CreateProcessingRequestDto,
   ): Promise<CreateProcessingRequestResponseDto> {
     try {
-      return await this.catalogClient.createProcessingRequest(
-        dto.ownerUserId,
-        dto.sourceStorageKey,
-      );
+      const { processingRequestId, status } =
+        await this.catalogClient.createProcessingRequest(
+          ownerUserId,
+          dto.sourceStorageKey,
+        );
+      return { processingRequestId, status };
     } catch (error) {
       if (error instanceof CatalogUnavailableError) {
         throw new HttpException('Catalog unavailable', HttpStatus.BAD_GATEWAY);

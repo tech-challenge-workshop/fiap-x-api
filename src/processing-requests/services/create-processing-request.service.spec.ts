@@ -38,13 +38,13 @@ describe('CreateProcessingRequestService', () => {
         status: 'RECEIVED',
       });
 
-    const result = await service.execute({
+    const result = await service.execute('alice', {
       ownerUserId: 'user-123',
       sourceStorageKey: 'videos/clip.mp4',
     });
 
     expect(createProcessingRequestSpy).toHaveBeenCalledWith(
-      'user-123',
+      'alice',
       'videos/clip.mp4',
     );
     expect(result).toEqual({
@@ -59,7 +59,7 @@ describe('CreateProcessingRequestService', () => {
       .mockRejectedValue(new CatalogUnavailableError());
 
     try {
-      await service.execute({
+      await service.execute('alice', {
         ownerUserId: 'user-123',
         sourceStorageKey: 'videos/clip.mp4',
       });
@@ -78,7 +78,7 @@ describe('CreateProcessingRequestService', () => {
       .mockRejectedValue(new Error('unexpected boom'));
 
     await expect(
-      service.execute({
+      service.execute('alice', {
         ownerUserId: 'user-123',
         sourceStorageKey: 'videos/clip.mp4',
       }),

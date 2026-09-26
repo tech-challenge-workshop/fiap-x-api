@@ -11,9 +11,10 @@ interface StoredRequest extends CatalogOwnedItem {
 }
 
 /**
- * Test double and local fallback for the Catalog. Reads return the whole
- * stored record, internal fields included, so the API's projection is what
- * keeps them out of responses.
+ * Test double and local fallback for the Catalog. Like the real Catalog's
+ * creation response, every answer carries the whole stored record, internal
+ * fields included, so the API's projection is what keeps them out of
+ * responses.
  */
 export class InMemoryCatalogClient implements CatalogClient {
   private idSequence = 0;
@@ -45,10 +46,7 @@ export class InMemoryCatalogClient implements CatalogClient {
       updatedAt: now,
     };
     this.requests.push(request);
-    return Promise.resolve({
-      processingRequestId: request.processingRequestId,
-      status: request.status,
-    });
+    return Promise.resolve({ ...request });
   }
 
   listOwned(

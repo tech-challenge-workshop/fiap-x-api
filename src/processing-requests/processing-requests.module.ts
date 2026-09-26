@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { CreateProcessingRequestController } from './controllers/create-processing-request.controller';
+import { ProcessingRequestsController } from './controllers/processing-requests.controller';
 import { CreateProcessingRequestService } from './services/create-processing-request.service';
 import { CATALOG_CLIENT } from './services/create-processing-request.service';
 import { InMemoryCatalogClient } from './adapters/in-memory-catalog-client.adapter';
@@ -16,7 +16,7 @@ const catalogClientProvider = {
 };
 
 @Module({
-  controllers: [CreateProcessingRequestController],
+  controllers: [ProcessingRequestsController],
   providers: [CreateProcessingRequestService, catalogClientProvider],
 })
 export class ProcessingRequestsModule {}
