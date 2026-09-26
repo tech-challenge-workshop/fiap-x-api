@@ -160,11 +160,12 @@ T11
 - Skill: NONE
 
 **Done when**:
-- [ ] Real signed tokens: valid → `{ sub }` and nothing else; expired, wrong `iss`, wrong `aud`, tampered payload, `alg` other than RS256, no `sub`, non-string `sub` → each rejected with the class the guard maps to 401
-- [ ] Quick gate passes; at least 8 new tests
+- [x] Real signed tokens: valid → `{ sub }` and nothing else; expired, wrong `iss`, wrong `aud`, tampered payload, `alg` other than RS256, no `sub`, non-string `sub` → each rejected with the class the guard maps to 401
+- [x] Quick gate passes; at least 8 new tests
 
 **Tests**: unit
 **Gate**: quick
+**Status**: ✅ Complete. 14 new unit tests (unit 40 → 54). Every 401 cause is a `jose` `JOSEError`: `JWTExpired`, `JWTClaimValidationFailed`, `JWSSignatureVerificationFailed`, `JOSEAlgNotAllowed`, `JWSInvalid`. A missing, empty or non-string `sub` raises `JWTClaimValidationFailed` with claim `sub`. `IdentityProviderUnavailableError` propagates unchanged for the 503. Token helper: `test/support/tokens.ts`. Spec-precision gap: a token with no `exp` is not rejected, because the spec only covers expired tokens (Keycloak always sets `exp`).
 
 ---
 
