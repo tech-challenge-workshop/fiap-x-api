@@ -22,6 +22,11 @@ import {
 
 const MiB = 1024 * 1024;
 const NOT_FOUND = { statusCode: 404, message: 'Upload not found' };
+const INVALID_PARTS = {
+  statusCode: 400,
+  message:
+    'Uploaded parts are invalid: every part except the last must be 16777216 bytes',
+};
 const KEY_REQUIRED = {
   statusCode: 400,
   message: 'Idempotency-Key header is required',
@@ -245,6 +250,78 @@ describe('POST /uploads/:uploadId/complete (e2e)', () => {
       expect(catalogCalls()).toBe(0);
     },
   );
+
+  describe('parts storage refuses (HARD-01)', () => {
+    /** An upload of 20 MiB whose parts are 1 byte, then 4 MiB. */
+    const undersized = async () => {
+      const upload = await startUpload(app, storage, alice, 20 * MiB);
+      storage.uploadPart(upload.storageUploadId, 1, 1);
+      storage.uploadPart(upload.storageUploadId, 2, 4 * MiB);
+      return upload;
+    };
+
+    it('answers 400 naming the part size, discards the upload and creates nothing; a second confirmation is 404 (AC P1.1, P1.2, P1.3)', async () => {
+      const upload = await undersized();
+      const catalogCalls = countCatalogCalls(catalog);
+
+      const res = await confirm(app, alice, upload.uploadId, 'key-1').expect(
+        400,
+      );
+
+      expect(res.body).toEqual(INVALID_PARTS);
+      expect(catalogCalls()).toBe(0);
+      await expect(stillInProgress(upload)).resolves.toBeUndefined();
+      await expect(
+        storage.findObject(`sources/alice/${upload.uploadId}.`),
+      ).resolves.toBeUndefined();
+
+      const again = await confirm(app, alice, upload.uploadId, 'key-1').expect(
+        404,
+      );
+
+      expect(again.body).toEqual(NOT_FOUND);
+      expect(catalogCalls()).toBe(0);
+      expect(await requestsOf('alice')).toEqual([]);
+    });
+
+    it('confirms parts of 5 MiB, then 1 byte, with 201 (near-miss of AC P1.1)', async () => {
+      const upload = await startUpload(app, storage, alice, 5 * MiB + 1);
+      storage.uploadPart(upload.storageUploadId, 1, 5 * MiB);
+      storage.uploadPart(upload.storageUploadId, 2, 1);
+
+      const res = await confirm(app, alice, upload.uploadId, 'key-1').expect(
+        201,
+      );
+
+      expect(await requestsOf('alice')).toEqual([
+        (res.body as ConfirmBody).processingRequestId,
+      ]);
+    });
+
+    it('still answers 400 when the abort fails, logging only the error name (edge case)', async () => {
+      const upload = await undersized();
+      const failure = new Error(
+        `abort detail ${upload.key} ${upload.storageUploadId}`,
+      );
+      failure.name = 'AbortFailedError';
+      jest.spyOn(storage, 'abortMultipart').mockRejectedValueOnce(failure);
+      const catalogCalls = countCatalogCalls(catalog);
+
+      const res = await confirm(app, alice, upload.uploadId, 'key-1').expect(
+        400,
+      );
+
+      expect(res.body).toEqual(INVALID_PARTS);
+      expect(catalogCalls()).toBe(0);
+      const logs = logger.text;
+      expect(logs).toContain('AbortFailedError');
+      expect(logs).not.toContain('abort detail');
+      expect(logs).not.toContain('sources/');
+      expect(logs).not.toContain(upload.storageUploadId);
+      // Left to the bucket's 1-day rule.
+      await expect(stillInProgress(upload)).resolves.toBeDefined();
+    });
+  });
 
   it("answers another user's uploadId, a random UUID, a malformed id and a discarded upload with byte-identical 404s (AC P2.8, edge case)", async () => {
     const alices = await uploaded();
