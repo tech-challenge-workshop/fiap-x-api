@@ -103,11 +103,13 @@ T9
 - Skill: NONE
 
 **Done when**:
-- [ ] Each required variable missing or blank → error naming it; TTL defaults and invalid values named
-- [ ] Quick gate passes; at least 8 new tests
+- [x] Each required variable missing or blank → error naming it; TTL defaults and invalid values named
+- [x] Quick gate passes; at least 8 new tests
 
 **Tests**: unit
 **Gate**: quick
+
+**Status**: ✅ Complete. 22 new unit tests in `src/storage/storage.config.spec.ts` (unit 82 → 104). Same shape as `loadOidcConfig`: blank counts as missing, a blank TTL takes its default, `0`, `-1`, `abc` and `1.5` are rejected for each TTL.
 
 ---
 
