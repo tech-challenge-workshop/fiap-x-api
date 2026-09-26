@@ -134,6 +134,7 @@ Decisions from the gray-area discussion of 2026-09-26 are in `fiap-x-platform/.s
 
 - WHEN a user has no requests THEN the list SHALL be `items: []` with `total: 0` and `200`.
 - IF the `Authorization` header uses a scheme other than `Bearer` THEN the API SHALL respond `401`.
+- IF the token has no `exp` claim THEN the API SHALL respond `401`. (Added during Execute: T4 found such a token accepted — it would never expire. Keycloak always sets `exp`; the guard must not depend on that.)
 - IF a token is valid but its signing key was rotated out of the provider's key set THEN the API SHALL refetch the key set once and SHALL respond `401` if the key is still absent.
 - The API SHALL NOT log the token or any part of its signature.
 
