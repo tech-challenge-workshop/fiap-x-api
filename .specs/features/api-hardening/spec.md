@@ -138,20 +138,20 @@ Decisions of 2026-09-26: V32 = `200` with the same request; V33 = `contentType` 
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| HARD-01 | P1: Invalid parts are the client's error (V28) | Design | In Design |
-| HARD-02 | P2: One upload, one request (V32) | Design | In Design |
-| HARD-03 | P3: `contentType` is case-insensitive (V33) | Design | In Design |
-| HARD-04 | P4: Token never logged on the 503 and non-bearer paths (V21) | Design | In Design |
-| HARD-05 | P4: No console output (V29) | Design | In Design |
-| HARD-06 | P5: Bearer scheme case-insensitive, tested (V22) | Design | In Design |
-| HARD-07 | P5: Internal and public storage clients, tested (V30) | Design | In Design |
-| HARD-08 | P5: `findObject` race and the key's character rule, tested (V31) | Design | In Design |
+| HARD-01 | P1: Invalid parts are the client's error (V28) | Tasks | In Tasks |
+| HARD-02 | P2: One upload, one request (V32) | Tasks | In Tasks |
+| HARD-03 | P3: `contentType` is case-insensitive (V33) | Tasks | In Tasks |
+| HARD-04 | P4: Token never logged on the 503 and non-bearer paths (V21) | Tasks | In Tasks |
+| HARD-05 | P4: No console output (V29) | Tasks | In Tasks |
+| HARD-06 | P5: Bearer scheme case-insensitive, tested (V22) | Tasks | In Tasks |
+| HARD-07 | P5: Internal and public storage clients, tested (V30) | Tasks | In Tasks |
+| HARD-08 | P5: `findObject` race and the key's character rule, tested (V31) | Tasks | In Tasks |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 8 total, 0 mapped to tasks, 8 unmapped ⚠️ (mapped in Tasks)
+**Coverage:** 8 total, 8 mapped to tasks, 0 unmapped
 
 ---
 
