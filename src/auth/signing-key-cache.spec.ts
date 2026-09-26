@@ -53,6 +53,23 @@ describe('SigningKeyCache', () => {
     expect(server.requestCount).toBe(1);
   });
 
+  it('keeps resolving a cached kid a day later while the provider is down, because cached keys never expire (AC P1.8)', async () => {
+    const cache = newCache();
+    await cache.keyFor(header('key-a'));
+    await server.stop();
+    const later = Date.now() + 24 * 60 * 60 * 1000;
+    const clock = jest.spyOn(Date, 'now').mockReturnValue(later);
+
+    try {
+      const key = await cache.keyFor(header('key-a'));
+
+      expect(await modulusOf(key)).toBe(keyA.publicJwk.n);
+      expect(server.requestCount).toBe(1);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
   it('throws IdentityProviderUnavailableError for an unknown kid while the provider is down (AC P1.7)', async () => {
     const cache = newCache();
     await cache.keyFor(header('key-a'));
