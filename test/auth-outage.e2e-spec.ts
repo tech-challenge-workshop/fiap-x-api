@@ -12,6 +12,7 @@ import { TestStorageEnv } from './support/test-storage';
 import { createSigningKey, SigningKey } from './support/jwks-server';
 import { signToken } from './support/tokens';
 import { countCatalogCalls } from './support/catalog-calls';
+import { CapturingLogger } from './support/capturing-logger';
 
 /**
  * The identity provider goes down after the app has authenticated once:
@@ -24,6 +25,7 @@ describe('Identity provider outage (e2e)', () => {
   let newKey: SigningKey;
   let app: INestApplication<App>;
   let catalogClient: InMemoryCatalogClient;
+  let logger: CapturingLogger;
 
   beforeAll(async () => {
     await idp.start();
@@ -45,6 +47,8 @@ describe('Identity provider outage (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+    logger = new CapturingLogger();
+    app.useLogger(logger);
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -96,6 +100,22 @@ describe('Identity provider outage (e2e)', () => {
       message: 'Authentication temporarily unavailable',
     });
     expect(catalogCalls()).toBe(0);
+  });
+
+  it('never logs the token it could not verify while the provider is down, only the error name (AC P4.1)', async () => {
+    await authenticateOnceThenStopProvider();
+    const token = await signToken(newKey);
+
+    await list(token).expect(503);
+
+    const logs = logger.text;
+    expect(logs).toContain(
+      'Authentication unavailable: IdentityProviderUnavailableError',
+    );
+    expect(logs).not.toContain(token);
+    for (const segment of token.split('.')) {
+      expect(logs).not.toContain(segment);
+    }
   });
 
   it('accepts the new key once the provider is back and serving it', async () => {

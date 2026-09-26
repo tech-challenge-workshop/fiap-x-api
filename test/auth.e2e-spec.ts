@@ -186,6 +186,20 @@ describe('Authentication (e2e)', () => {
     await request(app.getHttpServer()).get('/').expect(401);
   });
 
+  it('never logs a valid token sent under a scheme other than Bearer (AC P4.2)', async () => {
+    const token = await idp.token();
+
+    const res = await callProtected(`Token ${token}`);
+
+    expect(res.status).toBe(401);
+    const logs = logger.lines.join('\n');
+    expect(logs).toContain('Authentication rejected: no bearer token');
+    expect(logs).not.toContain(token);
+    for (const segment of token.split('.')) {
+      expect(logs).not.toContain(segment);
+    }
+  });
+
   it('never logs the token or its signature, only the rejection class', async () => {
     const tampered = tamperPayload(await idp.token());
     const rogue = await signToken(rogueKey);

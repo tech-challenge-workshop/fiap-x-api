@@ -327,13 +327,21 @@ T10
 
 **Done when**:
 
-- [ ] `503`, and the captured log does not contain the token
-- [ ] `401` for `Token <token>`, and the captured log does not contain the token
-- [ ] Adding the token to either log line turns its test red
-- [ ] Full gate passes
+- [x] `503`, and the captured log does not contain the token
+- [x] `401` for `Token <token>`, and the captured log does not contain the token
+- [x] Adding the token to either log line turns its test red
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
+
+**Status**: ✅ Complete. E2e 146 → 148, unit 150 unchanged, 0 skipped with `STORAGE_TEST_ENDPOINT` set.
+- `test/auth-outage.e2e-spec.ts` now installs `test/support/CapturingLogger` in `beforeEach`; this is setup only. A new test sends a token of a key the app never fetched while the provider is down. It gets `503`; the log contains `Authentication unavailable: IdentityProviderUnavailableError`; the log holds neither the token nor any of its three segments.
+- `test/auth.e2e-spec.ts` adds `Token <valid token>` → `401`. It reuses the suite's own capturing logger. The log contains `Authentication rejected: no bearer token` and neither the token nor any segment.
+- Existing tests changed: none.
+- Negatives (scratch copy, restored):
+  - Appending the token to the `503` line fails the outage test; appending only its signature fails it too.
+  - Appending the `Authorization` header to the no-bearer line fails the new `Token` test. The older auth log test did not catch this, since it sends only `Bearer` headers.
 
 ---
 
