@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { UPLOAD_STORAGE } from '../storage/upload-storage.port';
 import type { UploadStorage } from '../storage/upload-storage.port';
-import { CATALOG_CLIENT } from '../processing-requests/services/create-processing-request.service';
+import { CATALOG_CLIENT } from '../processing-requests/ports/catalog-client.port';
 import type {
   CatalogClient,
   CatalogCreateOutcome,

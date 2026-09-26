@@ -3,13 +3,14 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
-import { CATALOG_CLIENT } from './../src/processing-requests/services/create-processing-request.service';
+import { CATALOG_CLIENT } from './../src/processing-requests/ports/catalog-client.port';
 import { InMemoryCatalogClient } from './../src/processing-requests/adapters/in-memory-catalog-client.adapter';
 import { InMemoryUploadStorage } from './../src/storage/in-memory-upload-storage';
 import { UPLOAD_STORAGE } from './../src/storage/upload-storage.port';
 import { TestIdentityProvider } from './support/test-identity-provider';
 import { TestStorageEnv } from './support/test-storage';
 import { countCatalogCalls } from './support/catalog-calls';
+import { createThroughUpload } from './support/upload-flow';
 
 interface ListBody {
   items: Record<string, unknown>[];
@@ -26,6 +27,7 @@ describe('GET /processing-requests (e2e)', () => {
   const storageEnv = new TestStorageEnv();
   let app: INestApplication<App>;
   let catalogClient: InMemoryCatalogClient;
+  let storage: InMemoryUploadStorage;
   let alice: string;
   let bob: string;
   let carol: string;
@@ -44,11 +46,12 @@ describe('GET /processing-requests (e2e)', () => {
   });
 
   beforeEach(async () => {
+    storage = new InMemoryUploadStorage();
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
       .overrideProvider(UPLOAD_STORAGE)
-      .useValue(new InMemoryUploadStorage())
+      .useValue(storage)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -67,15 +70,9 @@ describe('GET /processing-requests (e2e)', () => {
     await app.close();
   });
 
-  /** Creates through the API, so ownership comes from the token. */
-  const create = async (token: string, key: string): Promise<string> => {
-    const res = await request(app.getHttpServer())
-      .post('/processing-requests')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ sourceStorageKey: key })
-      .expect(201);
-    return (res.body as { processingRequestId: string }).processingRequestId;
-  };
+  /** Creates through the upload flow, so ownership comes from the token. */
+  const create = async (token: string): Promise<string> =>
+    (await createThroughUpload(app, storage, token)).processingRequestId;
 
   const list = (token: string, query = '') =>
     request(app.getHttpServer())
@@ -86,11 +83,11 @@ describe('GET /processing-requests (e2e)', () => {
     body.items.map((item) => item.processingRequestId);
 
   it("returns only the caller's requests, newest first, with defaults page 1 and pageSize 20 (AC P3.1-P3.4)", async () => {
-    const a1 = await create(alice, 'sources/a1.mp4');
-    const b1 = await create(bob, 'sources/b1.mp4');
-    const a2 = await create(alice, 'sources/a2.mp4');
-    const a3 = await create(alice, 'sources/a3.mp4');
-    const b2 = await create(bob, 'sources/b2.mp4');
+    const a1 = await create(alice);
+    const b1 = await create(bob);
+    const a2 = await create(alice);
+    const a3 = await create(alice);
+    const b2 = await create(bob);
     const listSpy = jest.spyOn(catalogClient, 'listOwned');
 
     const aliceRes = await list(alice).expect(200);
@@ -113,9 +110,9 @@ describe('GET /processing-requests (e2e)', () => {
   });
 
   it('pages with the requested page and pageSize', async () => {
-    const a1 = await create(alice, 'sources/a1.mp4');
-    const a2 = await create(alice, 'sources/a2.mp4');
-    await create(alice, 'sources/a3.mp4');
+    const a1 = await create(alice);
+    const a2 = await create(alice);
+    await create(alice);
 
     const res = await list(alice, '?page=2&pageSize=2').expect(200);
 
@@ -129,8 +126,8 @@ describe('GET /processing-requests (e2e)', () => {
   });
 
   it('returns items: [] with the true total beyond the last page (AC P3.9)', async () => {
-    await create(alice, 'sources/a1.mp4');
-    await create(alice, 'sources/a2.mp4');
+    await create(alice);
+    await create(alice);
 
     const res = await list(alice, '?page=5&pageSize=1').expect(200);
 
@@ -138,7 +135,7 @@ describe('GET /processing-requests (e2e)', () => {
   });
 
   it('returns 200 with items: [] and total 0 for a user with no requests (edge case)', async () => {
-    await create(alice, 'sources/a1.mp4');
+    await create(alice);
 
     const res = await list(carol).expect(200);
 
@@ -146,7 +143,7 @@ describe('GET /processing-requests (e2e)', () => {
   });
 
   it('shows each item as id, status and timestamps only, never storage keys or the owner (AC P3.5, P3.6)', async () => {
-    await create(alice, 'sources/secret-key.mp4');
+    const { key } = await createThroughUpload(app, storage, alice);
 
     const res = await list(alice).expect(200);
 
@@ -170,7 +167,7 @@ describe('GET /processing-requests (e2e)', () => {
       'failureCode',
       'attemptId',
       'ownerUserId',
-      'sources/secret-key.mp4',
+      key,
     ]) {
       expect(res.text).not.toContain(`"${forbidden}"`);
     }

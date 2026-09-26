@@ -1,19 +1,30 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import request, { Response } from 'supertest';
+import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
-import { CATALOG_CLIENT } from './../src/processing-requests/services/create-processing-request.service';
+import { CATALOG_CLIENT } from './../src/processing-requests/ports/catalog-client.port';
 import { InMemoryCatalogClient } from './../src/processing-requests/adapters/in-memory-catalog-client.adapter';
 import { InMemoryUploadStorage } from './../src/storage/in-memory-upload-storage';
 import { UPLOAD_STORAGE } from './../src/storage/upload-storage.port';
 import { TestIdentityProvider } from './support/test-identity-provider';
 import { TestStorageEnv } from './support/test-storage';
+import { countCatalogCalls } from './support/catalog-calls';
+import { startUpload, uploadParts } from './support/upload-flow';
 
-describe('POST /processing-requests (e2e)', () => {
+interface RouteLayer {
+  route?: { path: string; methods: Record<string, boolean> };
+}
+
+/**
+ * The key-supplied create path of S5 is gone: requests are created only by
+ * confirming an upload, whose key the API generates (UPL-09).
+ */
+describe('The key-supplied create path is gone (e2e)', () => {
   const idp = new TestIdentityProvider();
   const storageEnv = new TestStorageEnv();
   let app: INestApplication<App>;
+  let storage: InMemoryUploadStorage;
   let catalogClient: InMemoryCatalogClient;
   let token: string;
 
@@ -29,11 +40,12 @@ describe('POST /processing-requests (e2e)', () => {
   });
 
   beforeEach(async () => {
+    storage = new InMemoryUploadStorage();
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
       .overrideProvider(UPLOAD_STORAGE)
-      .useValue(new InMemoryUploadStorage())
+      .useValue(storage)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -48,95 +60,83 @@ describe('POST /processing-requests (e2e)', () => {
     await app.init();
   });
 
-  it('returns 201 and a processingRequestId for valid input', () => {
-    return request(app.getHttpServer())
-      .post('/processing-requests')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        ownerUserId: 'user-123',
-        sourceStorageKey: 'videos/clip.mp4',
-      })
-      .expect(201)
-      .expect((res: Response) => {
-        const body = res.body as {
-          processingRequestId: string;
-          status: string;
-        };
-        expect(body.processingRequestId).toContain('alice');
-        expect(body.processingRequestId).not.toContain('user-123');
-        expect(body.processingRequestId).toContain('videos/clip.mp4');
-        expect(body.status).toBe('RECEIVED');
-      });
+  afterEach(async () => {
+    await app.close();
   });
 
-  it('returns 201 when ownerUserId is missing (AC P2.2)', () => {
-    return request(app.getHttpServer())
-      .post('/processing-requests')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        sourceStorageKey: 'videos/clip.mp4',
-      })
-      .expect(201);
-  });
-
-  it("creates as the token's sub, ignoring ownerUserId in the body, and answers only id and status (AC P2.1-P2.3)", async () => {
-    const createSpy = jest.spyOn(catalogClient, 'createProcessingRequest');
+  it('answers POST /processing-requests {sourceStorageKey} with a valid token with 404, creating nothing (AC P4.1)', async () => {
+    const catalogCalls = countCatalogCalls(catalogClient);
 
     const res = await request(app.getHttpServer())
       .post('/processing-requests')
       .set('Authorization', `Bearer ${token}`)
-      .send({ ownerUserId: 'bob', sourceStorageKey: 'videos/clip.mp4' })
+      .send({ sourceStorageKey: 'sources/bob/their-video.mp4' })
+      .expect(404);
+
+    expect(res.body).toMatchObject({ statusCode: 404 });
+    expect(catalogCalls()).toBe(0);
+  });
+
+  it('exposes exactly these routes, none of which takes a storage key (AC P4.1, P4.2)', () => {
+    const router = (
+      app.getHttpAdapter().getInstance() as {
+        router: { stack: RouteLayer[] };
+      }
+    ).router;
+
+    const routes = router.stack
+      .filter((layer) => layer.route)
+      .map(
+        (layer) =>
+          `${Object.keys(layer.route!.methods).join(',').toUpperCase()} ${layer.route!.path}`,
+      );
+
+    expect(routes.sort()).toEqual(
+      [
+        'GET /',
+        'GET /health',
+        'GET /processing-requests',
+        'GET /processing-requests/:id',
+        'POST /uploads',
+        'POST /uploads/:uploadId/complete',
+      ].sort(),
+    );
+  });
+
+  it('refuses a storage key in the body of POST /uploads without touching storage (AC P4.2)', async () => {
+    const storageCalls = countCatalogCalls(storage);
+
+    const res = await request(app.getHttpServer())
+      .post('/uploads')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        fileName: 'clip.mp4',
+        contentType: 'video/mp4',
+        sizeBytes: 1,
+        sourceStorageKey: 'sources/bob/their-video.mp4',
+      })
+      .expect(400);
+
+    expect(res.body).toEqual({
+      statusCode: 400,
+      message: ['property sourceStorageKey should not exist'],
+    });
+    expect(storageCalls()).toBe(0);
+  });
+
+  it('ignores a storage key sent to the confirmation: the request gets the generated key (AC P4.2)', async () => {
+    const upload = await startUpload(app, storage, token, 1);
+    uploadParts(storage, upload, 1);
+    const createSpy = jest.spyOn(catalogClient, 'createProcessingRequest');
+
+    await request(app.getHttpServer())
+      .post(`/uploads/${upload.uploadId}/complete`)
+      .set('Authorization', `Bearer ${token}`)
+      .set('Idempotency-Key', 'key-1')
+      .send({ sourceStorageKey: 'sources/bob/their-video.mp4' })
       .expect(201);
 
-    expect(createSpy).toHaveBeenCalledWith(
-      'alice',
-      'videos/clip.mp4',
-      expect.any(String),
-    );
-    const body = res.body as Record<string, unknown>;
-    expect(body).toEqual({
-      processingRequestId: expect.any(String) as string,
-      status: 'RECEIVED',
-    });
-    const alices = await catalogClient.listOwned('alice', 1, 20);
-    expect(alices.items.map((item) => item.processingRequestId)).toEqual([
-      body.processingRequestId,
-    ]);
-    expect((await catalogClient.listOwned('bob', 1, 20)).total).toBe(0);
-  });
-
-  it('returns 400 when sourceStorageKey is missing', () => {
-    return request(app.getHttpServer())
-      .post('/processing-requests')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        ownerUserId: 'user-123',
-      })
-      .expect(400);
-  });
-
-  it('returns 400 when both fields are missing', () => {
-    return request(app.getHttpServer())
-      .post('/processing-requests')
-      .set('Authorization', `Bearer ${token}`)
-      .send({})
-      .expect(400);
-  });
-
-  it('returns 502 when the catalog rejects creation', () => {
-    catalogClient.setNextRequestShouldReject(true);
-
-    return request(app.getHttpServer())
-      .post('/processing-requests')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        ownerUserId: 'user-123',
-        sourceStorageKey: 'videos/clip.mp4',
-      })
-      .expect(502);
-  });
-
-  afterEach(async () => {
-    await app.close();
+    expect(createSpy).toHaveBeenCalledWith('alice', upload.key, 'key-1');
+    expect(upload.key).toBe(`sources/alice/${upload.uploadId}.mp4`);
   });
 });

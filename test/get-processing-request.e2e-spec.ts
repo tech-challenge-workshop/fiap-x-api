@@ -3,19 +3,21 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
-import { CATALOG_CLIENT } from './../src/processing-requests/services/create-processing-request.service';
+import { CATALOG_CLIENT } from './../src/processing-requests/ports/catalog-client.port';
 import { InMemoryCatalogClient } from './../src/processing-requests/adapters/in-memory-catalog-client.adapter';
 import { InMemoryUploadStorage } from './../src/storage/in-memory-upload-storage';
 import { UPLOAD_STORAGE } from './../src/storage/upload-storage.port';
 import { TestIdentityProvider } from './support/test-identity-provider';
 import { TestStorageEnv } from './support/test-storage';
 import { countCatalogCalls } from './support/catalog-calls';
+import { createThroughUpload } from './support/upload-flow';
 
 describe('GET /processing-requests/:id (e2e)', () => {
   const idp = new TestIdentityProvider();
   const storageEnv = new TestStorageEnv();
   let app: INestApplication<App>;
   let catalogClient: InMemoryCatalogClient;
+  let storage: InMemoryUploadStorage;
   let alice: string;
   let bob: string;
 
@@ -32,11 +34,12 @@ describe('GET /processing-requests/:id (e2e)', () => {
   });
 
   beforeEach(async () => {
+    storage = new InMemoryUploadStorage();
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
       .overrideProvider(UPLOAD_STORAGE)
-      .useValue(new InMemoryUploadStorage())
+      .useValue(storage)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -55,14 +58,8 @@ describe('GET /processing-requests/:id (e2e)', () => {
     await app.close();
   });
 
-  const createAsAlice = async (): Promise<string> => {
-    const res = await request(app.getHttpServer())
-      .post('/processing-requests')
-      .set('Authorization', `Bearer ${alice}`)
-      .send({ sourceStorageKey: 'sources/alice/clip.mp4' })
-      .expect(201);
-    return (res.body as { processingRequestId: string }).processingRequestId;
-  };
+  /** Creates through the upload flow; returns the id and the generated key. */
+  const createAsAlice = () => createThroughUpload(app, storage, alice);
 
   const read = (token: string, id: string) =>
     request(app.getHttpServer())
@@ -70,7 +67,7 @@ describe('GET /processing-requests/:id (e2e)', () => {
       .set('Authorization', `Bearer ${token}`);
 
   it('returns the owner their request as id, status and timestamps only (AC P4.1)', async () => {
-    const id = await createAsAlice();
+    const { processingRequestId: id, key } = await createAsAlice();
 
     const res = await read(alice, id).expect(200);
 
@@ -87,11 +84,11 @@ describe('GET /processing-requests/:id (e2e)', () => {
       body.createdAt,
     );
     // The in-memory id embeds the key, so check values, not the raw text.
-    expect(Object.values(body)).not.toContain('sources/alice/clip.mp4');
+    expect(Object.values(body)).not.toContain(key);
   });
 
   it("answers another user's id, a random UUID and a malformed id with byte-identical 404s (AC P4.2, P4.3)", async () => {
-    const id = await createAsAlice();
+    const { processingRequestId: id } = await createAsAlice();
     const getSpy = jest.spyOn(catalogClient, 'getOwned');
 
     const otherUsers = await read(bob, id).expect(404);
@@ -114,7 +111,7 @@ describe('GET /processing-requests/:id (e2e)', () => {
   });
 
   it('responds 502 when the Catalog fails (AC P4.4)', async () => {
-    const id = await createAsAlice();
+    const { processingRequestId: id } = await createAsAlice();
     catalogClient.setNextRequestShouldReject(true);
 
     const res = await read(alice, id).expect(502);

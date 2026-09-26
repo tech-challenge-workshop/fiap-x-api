@@ -3,7 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request, { Response } from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
-import { CATALOG_CLIENT } from './../src/processing-requests/services/create-processing-request.service';
+import { CATALOG_CLIENT } from './../src/processing-requests/ports/catalog-client.port';
 import { InMemoryCatalogClient } from './../src/processing-requests/adapters/in-memory-catalog-client.adapter';
 import { InMemoryUploadStorage } from './../src/storage/in-memory-upload-storage';
 import { UPLOAD_STORAGE } from './../src/storage/upload-storage.port';
