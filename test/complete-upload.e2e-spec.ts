@@ -350,6 +350,25 @@ describe('POST /uploads/:uploadId/complete (e2e)', () => {
     await expect(stillInProgress(alices)).resolves.toBeDefined();
   });
 
+  it('answers 404 when the object is deleted while the confirmation reads it, creating nothing (AC P5.4)', async () => {
+    const upload = await uploaded();
+    const findObject = storage.findObject.bind(storage);
+    jest
+      .spyOn(storage, 'findObject')
+      .mockImplementationOnce(async (prefix: string) => {
+        // Deleted between the listing and the read.
+        await storage.deleteObject(upload.key);
+        return findObject(prefix);
+      });
+    const catalogCalls = countCatalogCalls(catalog);
+
+    const res = await confirm(app, alice, upload.uploadId, 'key-1').expect(404);
+
+    expect(res.body).toEqual(NOT_FOUND);
+    expect(catalogCalls()).toBe(0);
+    expect(await requestsOf('alice')).toEqual([]);
+  });
+
   it.each<[string]>([['not-a-uuid'], ['3F2B8C1E-9D4A-4E6B-8F1A-2C3D4E5F6A7']])(
     'answers a malformed uploadId (%s) with the same 404 before contacting storage (AC P2.8)',
     async (uploadId) => {

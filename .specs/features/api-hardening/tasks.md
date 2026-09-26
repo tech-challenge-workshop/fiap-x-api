@@ -148,12 +148,19 @@ T10
 
 **Done when**:
 
-- [ ] Removing the `isNotFound` branch at `s3-upload-storage.ts:219-223` turns this test red
-- [ ] The e2e for the vanished object answers `404`
-- [ ] Full gate passes
+- [x] Removing the `isNotFound` branch at `s3-upload-storage.ts:219-223` turns this test red
+- [x] The e2e for the vanished object answers `404`
+- [x] Full gate passes
 
 **Tests**: unit + e2e
 **Gate**: full
+
+**Status**: ✅ Complete. Unit 144 → 147, e2e 134 → 135, 0 skipped.
+- `src/storage/s3-upload-storage.spec.ts` (new) drives `findObject` through a fake `S3Sender` that lists the key, then answers the head: success → the object (the contrast case); the SDK's `NotFound` (404) → `undefined`; `AccessDenied` (403) → `StorageUnavailableError` with `Storage unavailable (AccessDenied)`.
+- `test/complete-upload.e2e-spec.ts` adds a case where the object is deleted while `findObject` reads it: `404 Upload not found`, no Catalog call, no request.
+- The branch now sits at `s3-upload-storage.ts:241-244` after T1's additions.
+- Existing tests changed: none.
+- Negatives (scratch copy, restored): removing the `isNotFound` branch fails the `NotFound` test; treating every head error as absence fails the `AccessDenied` test; a `502` for a missing object in the service fails the new e2e (and two older 404 cases).
 
 ---
 
