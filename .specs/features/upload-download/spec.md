@@ -148,8 +148,8 @@ Decisions from the gray-area discussion of 2026-09-26 are in `fiap-x-platform/.s
 | UPL-02 | P1: Start an upload | Execute | Implementing |
 | UPL-03 | P2: Confirm an upload, exactly once | Execute | Implementing |
 | UPL-04 | P2: Confirm an upload, exactly once | Execute | Implementing |
-| UPL-05 | P2: Confirm an upload, exactly once | Tasks | In Tasks |
-| UPL-06 | P2: Confirm an upload, exactly once | Tasks | In Tasks |
+| UPL-05 | P2: Confirm an upload, exactly once | Execute | Implementing |
+| UPL-06 | P2: Confirm an upload, exactly once | Execute | Implementing |
 | UPL-07 | P3: Download my ZIP | Execute | Implementing |
 | UPL-08 | P3: Download my ZIP | Tasks | In Tasks |
 | UPL-09 | P4: The key-supplied create path is gone | Tasks | In Tasks |
