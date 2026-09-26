@@ -7,7 +7,7 @@ import { CATALOG_CLIENT } from './../src/processing-requests/services/create-pro
 import { InMemoryCatalogClient } from './../src/processing-requests/adapters/in-memory-catalog-client.adapter';
 import { TestIdentityProvider } from './support/test-identity-provider';
 
-describe('CreateProcessingRequestController (e2e)', () => {
+describe('POST /processing-requests (e2e)', () => {
   const idp = new TestIdentityProvider();
   let app: INestApplication<App>;
   let catalogClient: InMemoryCatalogClient;
@@ -53,20 +53,43 @@ describe('CreateProcessingRequestController (e2e)', () => {
           processingRequestId: string;
           status: string;
         };
-        expect(body.processingRequestId).toContain('user-123');
+        expect(body.processingRequestId).toContain('alice');
+        expect(body.processingRequestId).not.toContain('user-123');
         expect(body.processingRequestId).toContain('videos/clip.mp4');
         expect(body.status).toBe('RECEIVED');
       });
   });
 
-  it('returns 400 when ownerUserId is missing', () => {
+  it('returns 201 when ownerUserId is missing (AC P2.2)', () => {
     return request(app.getHttpServer())
       .post('/processing-requests')
       .set('Authorization', `Bearer ${token}`)
       .send({
         sourceStorageKey: 'videos/clip.mp4',
       })
-      .expect(400);
+      .expect(201);
+  });
+
+  it("creates as the token's sub, ignoring ownerUserId in the body, and answers only id and status (AC P2.1-P2.3)", async () => {
+    const createSpy = jest.spyOn(catalogClient, 'createProcessingRequest');
+
+    const res = await request(app.getHttpServer())
+      .post('/processing-requests')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ ownerUserId: 'bob', sourceStorageKey: 'videos/clip.mp4' })
+      .expect(201);
+
+    expect(createSpy).toHaveBeenCalledWith('alice', 'videos/clip.mp4');
+    const body = res.body as Record<string, unknown>;
+    expect(body).toEqual({
+      processingRequestId: expect.any(String) as string,
+      status: 'RECEIVED',
+    });
+    const alices = await catalogClient.listOwned('alice', 1, 20);
+    expect(alices.items.map((item) => item.processingRequestId)).toEqual([
+      body.processingRequestId,
+    ]);
+    expect((await catalogClient.listOwned('bob', 1, 20)).total).toBe(0);
   });
 
   it('returns 400 when sourceStorageKey is missing', () => {
