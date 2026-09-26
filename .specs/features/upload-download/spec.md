@@ -144,22 +144,22 @@ Decisions from the gray-area discussion of 2026-09-26 are in `fiap-x-platform/.s
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| UPL-01 | P1: Start an upload | Design | Pending |
-| UPL-02 | P1: Start an upload | Design | Pending |
-| UPL-03 | P2: Confirm an upload, exactly once | Design | Pending |
-| UPL-04 | P2: Confirm an upload, exactly once | Design | Pending |
-| UPL-05 | P2: Confirm an upload, exactly once | Design | Pending |
-| UPL-06 | P2: Confirm an upload, exactly once | Design | Pending |
-| UPL-07 | P3: Download my ZIP | Design | Pending |
-| UPL-08 | P3: Download my ZIP | Design | Pending |
-| UPL-09 | P4: The key-supplied create path is gone | Design | Pending |
-| UPL-10 | P1–P3: no key as a field, no URL in logs | Design | Pending |
+| UPL-01 | P1: Start an upload | Tasks | In Tasks |
+| UPL-02 | P1: Start an upload | Tasks | In Tasks |
+| UPL-03 | P2: Confirm an upload, exactly once | Tasks | In Tasks |
+| UPL-04 | P2: Confirm an upload, exactly once | Tasks | In Tasks |
+| UPL-05 | P2: Confirm an upload, exactly once | Tasks | In Tasks |
+| UPL-06 | P2: Confirm an upload, exactly once | Tasks | In Tasks |
+| UPL-07 | P3: Download my ZIP | Tasks | In Tasks |
+| UPL-08 | P3: Download my ZIP | Tasks | In Tasks |
+| UPL-09 | P4: The key-supplied create path is gone | Tasks | In Tasks |
+| UPL-10 | P1–P3: no key as a field, no URL in logs | Tasks | In Tasks |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 10 total, 0 mapped to tasks, 10 unmapped ⚠️
+**Coverage:** 10 total, 10 mapped to tasks, 0 unmapped
 
 ---
 
