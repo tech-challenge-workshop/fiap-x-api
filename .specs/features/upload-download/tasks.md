@@ -153,13 +153,20 @@ T9
 - Skill: NONE
 
 **Done when**:
-- [ ] Integration suite against real RustFS covers every spike row, including a presigned part `PUT` sent with plain `fetch` (not the SDK) returning 200
-- [ ] **Verified negatively**: with the checksum setting removed in a scratch copy, the presigned `PUT` test fails with `BadDigest`
-- [ ] In CI (`CI` set) without `STORAGE_TEST_ENDPOINT` the suite fails rather than skips; CI starts `rustfs/rustfs:1.0.0` (workflow change listed as a deviation)
-- [ ] Full gate passes
+- [x] Integration suite against real RustFS covers every spike row, including a presigned part `PUT` sent with plain `fetch` (not the SDK) returning 200
+- [x] **Verified negatively**: with the checksum setting removed in a scratch copy, the presigned `PUT` test fails with `BadDigest`
+- [x] In CI (`CI` set) without `STORAGE_TEST_ENDPOINT` the suite fails rather than skips; CI starts `rustfs/rustfs:1.0.0` (workflow change listed as a deviation)
+- [x] Full gate passes
 
 **Tests**: integration
 **Gate**: full
+
+**Status**: ✅ Complete. `test/s3-upload-storage.e2e-spec.ts` adds 14 tests (e2e 54 → 68, 0 skipped with `STORAGE_TEST_ENDPOINT` set): 8 against RustFS 1.0.0 and 6 unreachable-storage cases that need no server.
+- The suite signs for `STORAGE_TEST_ENDPOINT` as the public endpoint and makes its own calls through the other loopback name. A working URL therefore proves the public client signed it, and the same URL on the internal host gets 403.
+- Negative check: with both `WHEN_REQUIRED` lines removed from a scratch copy, 5 tests failed with `400 <Code>BadDigest</Code>`. The file was then restored.
+- With `CI=true` and no endpoint the suite reports 1 failed; without `CI` its 8 real-endpoint tests skip.
+- **Deviation (workflow):** `.github/workflows/ci.yml` starts `rustfs/rustfs:1.0.0` before `npm run test:e2e` and sets `STORAGE_TEST_ENDPOINT=http://localhost:9000` on that step, as `processing-worker` does.
+- `StorageUnavailableError` is in `src/storage/storage-unavailable.error.ts`.
 
 ---
 
