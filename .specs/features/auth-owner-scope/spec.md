@@ -145,21 +145,21 @@ Decisions from the gray-area discussion of 2026-09-26 are in `fiap-x-platform/.s
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| AUTH-01 | P1: Only authenticated calls reach the system | Design | Pending |
-| AUTH-02 | P1: Only authenticated calls reach the system | Design | Pending |
-| AUTH-03 | P1: Only authenticated calls reach the system | Design | Pending |
-| AUTH-04 | P2: Requests are owned by the authenticated user | Design | Pending |
-| AUTH-05 | P3: A user lists their own requests | Design | Pending |
-| AUTH-06 | P3: A user lists their own requests | Design | Pending |
-| AUTH-07 | P3: A user lists their own requests | Design | Pending |
-| AUTH-08 | P4: A user reads one of their requests | Design | Pending |
-| AUTH-09 | P1–P4: responses never expose storage keys or internal codes | Design | Pending |
+| AUTH-01 | P1: Only authenticated calls reach the system | Tasks | In Tasks |
+| AUTH-02 | P1: Only authenticated calls reach the system | Tasks | In Tasks |
+| AUTH-03 | P1: Only authenticated calls reach the system | Tasks | In Tasks |
+| AUTH-04 | P2: Requests are owned by the authenticated user | Tasks | In Tasks |
+| AUTH-05 | P3: A user lists their own requests | Tasks | In Tasks |
+| AUTH-06 | P3: A user lists their own requests | Tasks | In Tasks |
+| AUTH-07 | P3: A user lists their own requests | Tasks | In Tasks |
+| AUTH-08 | P4: A user reads one of their requests | Tasks | In Tasks |
+| AUTH-09 | P1–P4: responses never expose storage keys or internal codes | Tasks | In Tasks |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 9 total, 0 mapped to tasks, 9 unmapped ⚠️
+**Coverage:** 9 total, 9 mapped to tasks, 0 unmapped
 
 ---
 
