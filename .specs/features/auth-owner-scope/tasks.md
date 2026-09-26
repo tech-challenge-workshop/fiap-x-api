@@ -65,6 +65,7 @@ T8
 ```
 T11
 T12
+T13
 ```
 
 ---
@@ -397,10 +398,32 @@ T12
 
 ---
 
+### T13: Close the two test gaps the first Verifier run found (fix round 1)
+
+**What**: Test-only fixes for the two surviving mutants: advance the clock while the provider is down (AC P1.8), and send a valid token under a non-Bearer scheme (edge case).
+**Where**: `src/auth/signing-key-cache.spec.ts`, `test/auth.e2e-spec.ts`
+**Depends on**: None
+**Reuses**: The existing key-set server and token helpers
+**Requirement**: AUTH-02, AUTH-03
+
+**Why**: Added by the orchestrator from the Verifier's FAIL (29 of 31 mutants killed). M11b (a 10-minute cache expiry) survived because every outage test stopped the provider right after the first fetch; M22 (any scheme accepted) survived because the non-Bearer case sent a string that is not a JWT, so it failed for another reason.
+
+**Done when**:
+- [x] A unit test stops the provider, advances `Date.now` by 24 hours, and still resolves the cached key with the key set fetched only once
+- [x] An e2e case sends `Basic <valid token>` and asserts 401 with the Catalog not called
+- [x] Verified in a scratch copy: M11b fails the new unit test (1 failed, 11 passed) and M22 fails the new e2e case (1 failed, 15 passed); the unmutated copy passes both (12/12, 16/16)
+- [x] Build gate passes
+
+**Tests**: e2e
+**Gate**: build
+**Status**: ✅ Complete. Test-only; no source change.
+
+---
+
 ## Phase Execution Map
 
 ```
-Phase 1 (T1 T2 T3 T4 T5) then Phase 2 (T6 T7 T8 T9 T10) then Phase 3 (T11 T12)
+Phase 1 (T1 T2 T3 T4 T5) then Phase 2 (T6 T7 T8 T9 T10) then Phase 3 (T11 T12 T13)
 ```
 
 11 tasks pack into two batches at ~7 per worker, cutting on phase boundaries: **Phase 1** (5) and **Phases 2 + 3** (6). Cross-repository order for S5: `processing-catalog` first (this repository's `HttpCatalogClient` calls its new routes), then this repository, then `fiap-x-platform`.
@@ -423,6 +446,7 @@ Phase 1 (T1 T2 T3 T4 T5) then Phase 2 (T6 T7 T8 T9 T10) then Phase 3 (T11 T12)
 | T10: Get route | 1 route + service | ✅ Granular |
 | T11: Outage e2e | 1 test file | ✅ Granular |
 | T12: Require `exp` | 1 option on the verifier | ✅ Granular |
+| T13: Verifier test gaps | 2 test cases | ✅ Granular |
 
 ---
 
@@ -442,6 +466,7 @@ Phase 1 (T1 T2 T3 T4 T5) then Phase 2 (T6 T7 T8 T9 T10) then Phase 3 (T11 T12)
 | T10 | T6, T7 | T6 → T10, T7 → T10 | ✅ Match |
 | T11 | None | — | ✅ Match |
 | T12 | None | — | ✅ Match |
+| T13 | None | — | ✅ Match |
 
 No task depends on a later phase. Phase 2 and 3 tasks rely on Phase 1 having completed (the guard provides `@Owner()`), which phase ordering guarantees.
 
@@ -463,5 +488,6 @@ No task depends on a later phase. Phase 2 and 3 tasks rely on Phase 1 having com
 | T10 | Controllers + services | e2e | e2e | ✅ OK |
 | T11 | Guard + module wiring | e2e | e2e | ✅ OK |
 | T12 | Auth primitives + guard | e2e | e2e | ✅ OK |
+| T13 | Auth primitives + guard (tests) | e2e | e2e | ✅ OK |
 
 T1 is the only `Tests: none`, on a layer the matrix marks `none`; its correctness is proved by T3's first test importing `jose` under Jest and by the build gate loading the built module.

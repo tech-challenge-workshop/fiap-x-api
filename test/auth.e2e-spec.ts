@@ -95,6 +95,12 @@ describe('Authentication (e2e)', () => {
       'a scheme other than Bearer (edge case)',
       () => Promise.resolve('Basic YWxpY2U6c2VjcmV0'),
     ],
+    [
+      // Only the scheme check can reject this one: the token itself is valid,
+      // so dropping that check would let it through.
+      'a valid token under a scheme other than Bearer (edge case)',
+      async () => `Basic ${await idp.token()}`,
+    ],
     ['Bearer with no token (AC P1.1)', () => Promise.resolve('Bearer ')],
     [
       'a tampered token (AC P1.2)',

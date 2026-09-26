@@ -26,6 +26,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: test/processing-requests.e2e-spec.ts:26 (test)
 - last seen: 2026-08-27T23:37:16Z
 
+### L-003 - When a requirement holds for a duration, advance the clock in the test instead of asserting only right after setup
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · harmful: 0
+- features: auth-owner-scope
+- evidence: M11b src/auth/signing-key-cache.ts:29; src/auth/signing-key-cache.spec.ts:45-54
+- last seen: 2026-09-26T04:08:33Z
+
+### L-004 - Test a rejection rule with an input that only that rule rejects, otherwise a later check hides its removal
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · harmful: 0
+- features: auth-owner-scope
+- evidence: M22 src/auth/jwt-auth.guard.ts:20; test/auth.e2e-spec.ts:95-96
+- last seen: 2026-09-26T04:08:33Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
