@@ -5,9 +5,10 @@ import { ProcessingRequestsModule } from './processing-requests/processing-reque
 import { HealthController } from './health/health.controller';
 import { AuthModule } from './auth/auth.module';
 import { StorageModule } from './storage/storage.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
-  imports: [AuthModule, StorageModule, ProcessingRequestsModule],
+  imports: [AuthModule, StorageModule, ProcessingRequestsModule, UploadsModule],
   controllers: [AppController, HealthController],
   providers: [AppService],
 })
