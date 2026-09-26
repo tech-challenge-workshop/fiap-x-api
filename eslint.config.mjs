@@ -32,4 +32,12 @@ export default tseslint.config(
       "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
   },
+  {
+    // Production code logs only through Nest's Logger, which the tests
+    // capture; console output would bypass that check (HARD-05).
+    files: ['src/**/*.ts'],
+    rules: {
+      'no-console': 'error',
+    },
+  },
 );
