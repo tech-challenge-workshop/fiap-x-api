@@ -1,3 +1,5 @@
+import { createServer, Server } from 'node:http';
+import { AddressInfo } from 'node:net';
 import { HttpCatalogClient } from './http-catalog-client.adapter';
 import { CatalogUnavailableError } from '../errors/catalog-unavailable.error';
 
@@ -80,5 +82,179 @@ describe('HttpCatalogClient', () => {
     await expect(
       client.createProcessingRequest('user-1', 'source-1'),
     ).rejects.toThrow(CatalogUnavailableError);
+  });
+});
+
+describe('HttpCatalogClient owner-scoped reads (local server)', () => {
+  type Reply = { status: number; body: string };
+  let server: Server;
+  let baseUrl: string;
+  let requestedUrls: string[];
+  let reply: Reply;
+
+  const json = (status: number, body: unknown): Reply => ({
+    status,
+    body: JSON.stringify(body),
+  });
+
+  const item = {
+    processingRequestId: '7d4f1c1e-0000-4000-8000-000000000001',
+    status: 'FAILED',
+    createdAt: '2026-09-26T10:00:00.000Z',
+    updatedAt: '2026-09-26T10:05:00.000Z',
+    failureReason: 'The video could not be processed',
+  };
+
+  beforeAll(async () => {
+    server = createServer((req, res) => {
+      requestedUrls.push(req.url ?? '');
+      res.writeHead(reply.status, { 'Content-Type': 'application/json' });
+      res.end(reply.body);
+    });
+    await new Promise<void>((resolve) =>
+      server.listen(0, '127.0.0.1', resolve),
+    );
+    baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+
+  afterAll(async () => {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  });
+
+  beforeEach(() => {
+    requestedUrls = [];
+  });
+
+  /** A base URL on which nothing listens: every fetch fails at the network. */
+  const unreachableBaseUrl = async (): Promise<string> => {
+    const probe = createServer();
+    await new Promise<void>((resolve) => probe.listen(0, '127.0.0.1', resolve));
+    const port = (probe.address() as AddressInfo).port;
+    await new Promise<void>((resolve) => probe.close(() => resolve()));
+    return `http://127.0.0.1:${port}`;
+  };
+
+  describe('listOwned', () => {
+    it('returns the Catalog page and asks for the owner, page and pageSize', async () => {
+      const page = { items: [item], page: 2, pageSize: 5, total: 6 };
+      reply = json(200, page);
+
+      const result = await new HttpCatalogClient(baseUrl).listOwned(
+        'alice',
+        2,
+        5,
+      );
+
+      expect(result).toEqual(page);
+      expect(requestedUrls).toEqual([
+        '/owners/alice/processing-requests?page=2&pageSize=5',
+      ]);
+    });
+
+    it('URL-encodes the owner in the path', async () => {
+      reply = json(200, { items: [], page: 1, pageSize: 20, total: 0 });
+
+      await new HttpCatalogClient(baseUrl).listOwned('a/b c?d', 1, 20);
+
+      expect(requestedUrls).toEqual([
+        '/owners/a%2Fb%20c%3Fd/processing-requests?page=1&pageSize=20',
+      ]);
+    });
+
+    it.each<[string, Reply]>([
+      ['a 500', json(500, { statusCode: 500, message: 'boom' })],
+      ['a 404', json(404, { statusCode: 404, message: 'Not Found' })],
+      ['a body that is not JSON', { status: 200, body: 'not json' }],
+      [
+        'items that are not an array',
+        json(200, { items: {}, page: 1, pageSize: 20, total: 0 }),
+      ],
+      ['a missing total', json(200, { items: [], page: 1, pageSize: 20 })],
+      [
+        'an item without status',
+        json(200, {
+          items: [{ ...item, status: undefined }],
+          page: 1,
+          pageSize: 20,
+          total: 1,
+        }),
+      ],
+    ])('throws CatalogUnavailableError on %s', async (_, response) => {
+      reply = response;
+
+      await expect(
+        new HttpCatalogClient(baseUrl).listOwned('alice', 1, 20),
+      ).rejects.toThrow(CatalogUnavailableError);
+    });
+
+    it('throws CatalogUnavailableError when the Catalog is unreachable', async () => {
+      const client = new HttpCatalogClient(await unreachableBaseUrl());
+
+      await expect(client.listOwned('alice', 1, 20)).rejects.toThrow(
+        CatalogUnavailableError,
+      );
+    });
+  });
+
+  describe('getOwned', () => {
+    it('returns the Catalog item, asking under the owner with the id encoded', async () => {
+      reply = json(200, item);
+
+      const result = await new HttpCatalogClient(baseUrl).getOwned(
+        'a/b',
+        'x/y',
+      );
+
+      expect(result).toEqual(item);
+      expect(requestedUrls).toEqual([
+        '/owners/a%2Fb/processing-requests/x%2Fy',
+      ]);
+    });
+
+    it('returns undefined when the Catalog answers 404', async () => {
+      reply = json(404, {
+        message: 'Processing request not found',
+        error: 'Not Found',
+        statusCode: 404,
+      });
+
+      await expect(
+        new HttpCatalogClient(baseUrl).getOwned(
+          'alice',
+          item.processingRequestId,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it.each<[string, Reply]>([
+      ['a 500', json(500, { statusCode: 500, message: 'boom' })],
+      [
+        'a 400',
+        json(400, { statusCode: 400, message: 'ownerUserId is required' }),
+      ],
+      ['a body that is not JSON', { status: 200, body: 'not json' }],
+      [
+        'an item without createdAt',
+        json(200, { ...item, createdAt: undefined }),
+      ],
+      ['a non-string failureReason', json(200, { ...item, failureReason: 42 })],
+    ])('throws CatalogUnavailableError on %s', async (_, response) => {
+      reply = response;
+
+      await expect(
+        new HttpCatalogClient(baseUrl).getOwned(
+          'alice',
+          item.processingRequestId,
+        ),
+      ).rejects.toThrow(CatalogUnavailableError);
+    });
+
+    it('throws CatalogUnavailableError when the Catalog is unreachable', async () => {
+      const client = new HttpCatalogClient(await unreachableBaseUrl());
+
+      await expect(
+        client.getOwned('alice', item.processingRequestId),
+      ).rejects.toThrow(CatalogUnavailableError);
+    });
   });
 });
