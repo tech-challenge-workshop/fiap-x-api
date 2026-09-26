@@ -32,7 +32,9 @@ export class InMemoryCatalogClient implements CatalogClient {
   /**
    * Idempotent per `(owner, idempotencyKey)`, as the Catalog is: the same
    * key for the same source replays the request, for another source it is a
-   * conflict.
+   * conflict. The key is checked first. An unused key for a source the owner
+   * already has replays that request and binds nothing (one request per
+   * source, HARD-02).
    */
   createProcessingRequest(
     ownerUserId: string,
@@ -56,6 +58,14 @@ export class InMemoryCatalogClient implements CatalogClient {
           ? { ...existing, outcome: 'replayed' }
           : { outcome: 'conflict' },
       );
+    }
+    const sameSource = this.requests.find(
+      (request) =>
+        request.ownerUserId === ownerUserId &&
+        request.sourceStorageKey === sourceStorageKey,
+    );
+    if (sameSource) {
+      return Promise.resolve({ ...sameSource, outcome: 'replayed' });
     }
 
     this.idSequence += 1;
