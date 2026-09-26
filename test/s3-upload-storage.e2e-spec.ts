@@ -7,6 +7,8 @@ import {
 } from '@aws-sdk/client-s3';
 import { randomUUID } from 'node:crypto';
 import { S3UploadStorage } from './../src/storage/s3-upload-storage';
+import { StartUploadService } from './../src/uploads/start-upload.service';
+import { StartUploadDto } from './../src/uploads/start-upload.dto';
 import { StorageUnavailableError } from './../src/storage/storage-unavailable.error';
 import { UploadedPart } from './../src/storage/upload-storage.port';
 
@@ -215,6 +217,44 @@ function otherLoopback(url: string): string {
         new HeadObjectCommand({ Bucket: bucket, Key: key }),
       );
       expect(head.ContentType).toBe('video/mp4');
+    });
+
+    it('stores an upload started with VIDEO/QuickTime as video/quicktime (HARD-03, AC P3.2)', async () => {
+      const service = new StartUploadService(storage, {
+        endpoint: internalEndpoint,
+        publicEndpoint,
+        bucket,
+        ...credentials,
+        uploadUrlTtlSeconds: 3600,
+        downloadUrlTtlSeconds: 300,
+      });
+      const dto = Object.assign(new StartUploadDto(), {
+        fileName: 'clip.mov',
+        contentType: 'VIDEO/QuickTime',
+        sizeBytes: 1000,
+      });
+
+      const started = await service.execute('alice', dto);
+
+      const prefix = `sources/alice/${started.uploadId}.`;
+      const key = `${prefix}mov`;
+      created.push(key);
+      const res = await putPart(started.parts[0].url, 1000);
+      expect(res.status).toBe(200);
+      const inProgress = await storage.findInProgress(prefix);
+      expect(inProgress?.key).toBe(key);
+      const storageUploadId = inProgress!.storageUploadId;
+      await expect(
+        storage.complete(
+          key,
+          storageUploadId,
+          await partsOf(key, storageUploadId),
+        ),
+      ).resolves.toBe('completed');
+      const head = await raw.send(
+        new HeadObjectCommand({ Bucket: bucket, Key: key }),
+      );
+      expect(head.ContentType).toBe('video/quicktime');
     });
 
     it("answers 'gone' to a replayed completion and to listing a completed upload", async () => {
