@@ -384,12 +384,16 @@ T12
 - Skill: NONE
 
 **Done when**:
-- [ ] A validly signed token without `exp` is rejected with the class the guard maps to 401 (unit), and gets 401 over HTTP with the Catalog not called (e2e)
-- [ ] Every existing token test still passes
-- [ ] Build gate passes
+- [x] A validly signed token without `exp` is rejected with the class the guard maps to 401 (unit), and gets 401 over HTTP with the Catalog not called (e2e)
+- [x] Every existing token test still passes
+- [x] Build gate passes
 
 **Tests**: e2e
 **Gate**: build
+**Status**: ✅ Complete. unit 80 → 81, e2e 50 → 51. Build gate green.
+- `TokenVerifier` passes `requiredClaims: ['exp', 'sub']` to `jwtVerify`.
+- Unit, `src/auth/token-verifier.spec.ts:137-139`: the token really has no `exp` (`decodeJwt`), and verification fails with `errors.JWTClaimValidationFailed` (asserted in `claimFailure`, `:45`) on claim `exp`.
+- e2e, `test/auth.e2e-spec.ts:125`: a new row in the 401 table, so `:131-133` assert 401, the `{ statusCode: 401, message: "Unauthorized" }` body and zero Catalog calls. All 14 other verifier tests and all other 401 rows pass unchanged.
 
 ---
 
