@@ -48,12 +48,20 @@ export interface UploadStorage {
     storageUploadId: string,
   ): Promise<UploadedPart[] | 'gone'>;
 
-  /** `'gone'` when the upload no longer exists, e.g. already completed. */
+  /**
+   * `'gone'` when the upload no longer exists, e.g. already completed.
+   * `'rejected'` when storage refuses the parts themselves (a non-final part
+   * under the minimum size, a wrong ETag, parts out of order); the upload
+   * then stays in progress until it is aborted.
+   */
   complete(
     key: string,
     storageUploadId: string,
     parts: UploadedPart[],
-  ): Promise<'completed' | 'gone'>;
+  ): Promise<'completed' | 'gone' | 'rejected'>;
+
+  /** Discards a multipart upload; one that no longer exists is not an error. */
+  abortMultipart(key: string, storageUploadId: string): Promise<void>;
 
   /** The completed object under `prefix`, if any. */
   findObject(prefix: string): Promise<StoredObject | undefined>;

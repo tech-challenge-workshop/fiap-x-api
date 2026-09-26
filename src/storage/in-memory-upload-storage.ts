@@ -29,6 +29,8 @@ export type PresignRecord =
     };
 
 const FAKE_ORIGIN = 'http://storage.test';
+/** S3's minimum size for every part except the last. */
+const MIN_PART_SIZE = 5 * 1024 * 1024;
 const BUCKET = 'fiapx';
 
 /**
@@ -122,18 +124,30 @@ export class InMemoryUploadStorage implements UploadStorage {
     key: string,
     storageUploadId: string,
     parts: UploadedPart[],
-  ): Promise<'completed' | 'gone'> {
+  ): Promise<'completed' | 'gone' | 'rejected'> {
     const upload = this.uploads.get(storageUploadId);
     if (!upload) {
       return Promise.resolve('gone');
     }
-    const sizeBytes = parts.reduce((sum, part) => {
+    // As S3 answers InvalidPart, InvalidPartOrder and EntityTooSmall; the
+    // upload stays in progress until it is aborted.
+    const rejected = parts.some((part, index) => {
       const stored = upload.parts.get(part.partNumber);
-      if (!stored || stored.etag !== part.etag) {
-        throw new Error(`InvalidPart: ${part.partNumber}`);
-      }
-      return sum + stored.size;
-    }, 0);
+      const isLast = index === parts.length - 1;
+      return (
+        !stored ||
+        stored.etag !== part.etag ||
+        (index > 0 && part.partNumber <= parts[index - 1].partNumber) ||
+        (!isLast && stored.size < MIN_PART_SIZE)
+      );
+    });
+    if (rejected) {
+      return Promise.resolve('rejected');
+    }
+    const sizeBytes = parts.reduce(
+      (sum, part) => sum + (upload.parts.get(part.partNumber)?.size ?? 0),
+      0,
+    );
     this.uploads.delete(storageUploadId);
     this.objects.set(key, {
       key,
@@ -141,6 +155,11 @@ export class InMemoryUploadStorage implements UploadStorage {
       declaredSizeBytes: upload.declaredSize,
     });
     return Promise.resolve('completed');
+  }
+
+  abortMultipart(_key: string, storageUploadId: string): Promise<void> {
+    this.uploads.delete(storageUploadId);
+    return Promise.resolve();
   }
 
   findObject(prefix: string): Promise<StoredObject | undefined> {

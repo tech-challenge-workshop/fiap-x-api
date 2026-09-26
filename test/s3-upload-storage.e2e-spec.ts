@@ -230,6 +230,89 @@ function otherLoopback(url: string): string {
       );
     });
 
+    describe('a completion storage refuses because of its parts', () => {
+      /** Refused, still in progress, then aborted: nothing left behind. */
+      const expectRejectedThenAborted = async (
+        key: string,
+        prefix: string,
+        storageUploadId: string,
+        sent: UploadedPart[],
+      ) => {
+        await expect(
+          storage.complete(key, storageUploadId, sent),
+        ).resolves.toBe('rejected');
+        await expect(storage.findInProgress(prefix)).resolves.toEqual({
+          key,
+          storageUploadId,
+        });
+
+        await expect(
+          storage.abortMultipart(key, storageUploadId),
+        ).resolves.toBeUndefined();
+
+        await expect(storage.findInProgress(prefix)).resolves.toBeUndefined();
+        await expect(storage.findObject(prefix)).resolves.toBeUndefined();
+        await expect(storage.listParts(key, storageUploadId)).resolves.toBe(
+          'gone',
+        );
+        // Aborting an upload that no longer exists is not an error.
+        await expect(
+          storage.abortMultipart(key, storageUploadId),
+        ).resolves.toBeUndefined();
+      };
+
+      it("answers 'rejected' for a non-final part of 1 byte (EntityTooSmall)", async () => {
+        const { key, prefix } = session();
+        const storageUploadId = await upload(key, 20 * MiB, [1, 4 * MiB]);
+
+        await expectRejectedThenAborted(
+          key,
+          prefix,
+          storageUploadId,
+          await partsOf(key, storageUploadId),
+        );
+      });
+
+      it("answers 'rejected' for a wrong ETag (InvalidPart)", async () => {
+        const { key, prefix } = session();
+        const storageUploadId = await upload(key, 1000, [1000]);
+
+        await expectRejectedThenAborted(key, prefix, storageUploadId, [
+          { partNumber: 1, etag: `"${'0'.repeat(32)}"`, size: 1000 },
+        ]);
+      });
+
+      it("answers 'rejected' for parts out of order (InvalidPartOrder)", async () => {
+        const { key, prefix } = session();
+        const storageUploadId = await upload(key, 10 * MiB, [5 * MiB, 5 * MiB]);
+        const parts = await partsOf(key, storageUploadId);
+
+        await expectRejectedThenAborted(
+          key,
+          prefix,
+          storageUploadId,
+          [...parts].reverse(),
+        );
+      });
+
+      it('still throws StorageUnavailableError when the bucket does not exist (near-miss)', async () => {
+        const { key } = session();
+        const storageUploadId = await upload(key, 1000, [1000]);
+        const parts = await partsOf(key, storageUploadId);
+        const noBucket = S3UploadStorage.fromConfig({
+          endpoint: internalEndpoint,
+          publicEndpoint,
+          bucket: `fiapx-api-missing-${randomUUID()}`,
+          ...credentials,
+        });
+
+        await expect(
+          noBucket.complete(key, storageUploadId, parts),
+        ).rejects.toBeInstanceOf(StorageUnavailableError);
+        await storage.abortMultipart(key, storageUploadId);
+      });
+    });
+
     it("finds no object under another owner's prefix after completion, and none once deleted", async () => {
       const { key, prefix } = session();
       const storageUploadId = await upload(key, 1000, [1000]);
@@ -304,6 +387,7 @@ describe('S3UploadStorage with storage unreachable', () => {
     ['findInProgress', () => unreachable.findInProgress('sources/alice/')],
     ['listParts', () => unreachable.listParts(key, 'upload-1')],
     ['complete', () => unreachable.complete(key, 'upload-1', [part])],
+    ['abortMultipart', () => unreachable.abortMultipart(key, 'upload-1')],
     ['findObject', () => unreachable.findObject('sources/alice/')],
     ['deleteObject', () => unreachable.deleteObject(key)],
   ])('%s rejects with StorageUnavailableError', async (_name, call) => {

@@ -143,6 +143,102 @@ describe('InMemoryUploadStorage', () => {
     });
   });
 
+  describe('CompleteMultipartUpload refusing the parts (api-hardening spike rows)', () => {
+    const MIN_PART = 5_242_880;
+
+    it.each<[string, number[]]>([
+      ['1 byte, then 4 MiB (EntityTooSmall)', [1, 4 * MiB]],
+      ['one byte under 5 MiB, then 1 byte (EntityTooSmall)', [MIN_PART - 1, 1]],
+    ])(
+      "answers 'rejected' for a non-final part of %s, leaving the upload in progress",
+      async (_, sizes) => {
+        const uploadId = await storage.startMultipart(KEY, 'video/mp4', 20);
+        sizes.forEach((size, index) =>
+          storage.uploadPart(uploadId, index + 1, size),
+        );
+        const listed = await parts(uploadId);
+
+        await expect(storage.complete(KEY, uploadId, listed)).resolves.toBe(
+          'rejected',
+        );
+
+        await expect(storage.findInProgress(PREFIX)).resolves.toEqual({
+          key: KEY,
+          storageUploadId: uploadId,
+        });
+        await expect(storage.listParts(KEY, uploadId)).resolves.toEqual(listed);
+        await expect(storage.findObject(PREFIX)).resolves.toBeUndefined();
+      },
+    );
+
+    it("answers 'rejected' for a wrong ETag (InvalidPart), leaving the upload in progress", async () => {
+      const uploadId = await storage.startMultipart(KEY, 'video/mp4', 1);
+      storage.uploadPart(uploadId, 1, 1);
+
+      await expect(
+        storage.complete(KEY, uploadId, [
+          { partNumber: 1, etag: '"not-the-etag"', size: 1 },
+        ]),
+      ).resolves.toBe('rejected');
+
+      await expect(storage.findInProgress(PREFIX)).resolves.toBeDefined();
+      await expect(storage.findObject(PREFIX)).resolves.toBeUndefined();
+    });
+
+    it("answers 'rejected' for parts out of order (InvalidPartOrder), leaving the upload in progress", async () => {
+      const uploadId = await storage.startMultipart(KEY, 'video/mp4', 20);
+      storage.uploadPart(uploadId, 1, 16 * MiB);
+      storage.uploadPart(uploadId, 2, MIN_PART);
+      const listed = await parts(uploadId);
+
+      await expect(
+        storage.complete(KEY, uploadId, [...listed].reverse()),
+      ).resolves.toBe('rejected');
+
+      await expect(storage.findInProgress(PREFIX)).resolves.toBeDefined();
+      await expect(storage.findObject(PREFIX)).resolves.toBeUndefined();
+    });
+
+    it('completes with 5 MiB non-final parts (near-miss of EntityTooSmall)', async () => {
+      const uploadId = await storage.startMultipart(KEY, 'video/mp4', 20);
+      storage.uploadPart(uploadId, 1, MIN_PART);
+      storage.uploadPart(uploadId, 2, MIN_PART);
+      storage.uploadPart(uploadId, 3, 1);
+
+      await expect(
+        storage.complete(KEY, uploadId, await parts(uploadId)),
+      ).resolves.toBe('completed');
+
+      await expect(storage.findObject(PREFIX)).resolves.toEqual({
+        key: KEY,
+        sizeBytes: 2 * MIN_PART + 1,
+        declaredSizeBytes: 20,
+      });
+    });
+  });
+
+  describe('AbortMultipartUpload', () => {
+    it('discards a rejected upload, and aborting it again is not an error', async () => {
+      const uploadId = await storage.startMultipart(KEY, 'video/mp4', 20);
+      storage.uploadPart(uploadId, 1, 1);
+      storage.uploadPart(uploadId, 2, 4 * MiB);
+      const listed = await parts(uploadId);
+      await expect(storage.complete(KEY, uploadId, listed)).resolves.toBe(
+        'rejected',
+      );
+
+      await expect(
+        storage.abortMultipart(KEY, uploadId),
+      ).resolves.toBeUndefined();
+
+      await expect(storage.findInProgress(PREFIX)).resolves.toBeUndefined();
+      await expect(storage.listParts(KEY, uploadId)).resolves.toBe('gone');
+      await expect(
+        storage.abortMultipart(KEY, uploadId),
+      ).resolves.toBeUndefined();
+    });
+  });
+
   describe('ListObjectsV2 by session prefix (spike row)', () => {
     it('finds no object before completion', async () => {
       await storage.startMultipart(KEY, 'video/mp4', 20);

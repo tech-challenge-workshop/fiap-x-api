@@ -138,7 +138,7 @@ Decisions of 2026-09-26: V32 = `200` with the same request; V33 = `contentType` 
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| HARD-01 | P1: Invalid parts are the client's error (V28) | Tasks | In Tasks |
+| HARD-01 | P1: Invalid parts are the client's error (V28) | Execute | Implementing (T1 done) |
 | HARD-02 | P2: One upload, one request (V32) | Tasks | In Tasks |
 | HARD-03 | P3: `contentType` is case-insensitive (V33) | Tasks | In Tasks |
 | HARD-04 | P4: Token never logged on the 503 and non-bearer paths (V21) | Tasks | In Tasks |

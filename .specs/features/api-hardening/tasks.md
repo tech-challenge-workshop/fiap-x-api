@@ -86,12 +86,18 @@ T10
 
 **Done when**:
 
-- [ ] RustFS: 1 byte then 4 MiB → `'rejected'`; a wrong ETag → `'rejected'`; out of order → `'rejected'`; after `abortMultipart` no upload is in progress; aborting again is not an error. A bucket that does not exist still throws `StorageUnavailableError` (the near-miss)
-- [ ] Double: the same three rejections, plus 5 MiB non-final parts complete. Existing tests that relied on the double's plain `Error` are listed and updated without weakening
-- [ ] Full gate passes
+- [x] RustFS: 1 byte then 4 MiB → `'rejected'`; a wrong ETag → `'rejected'`; out of order → `'rejected'`; after `abortMultipart` no upload is in progress; aborting again is not an error. A bucket that does not exist still throws `StorageUnavailableError` (the near-miss)
+- [x] Double: the same three rejections, plus 5 MiB non-final parts complete. Existing tests that relied on the double's plain `Error` are listed and updated without weakening
+- [x] Full gate passes
 
 **Tests**: unit + integration
 **Gate**: full
+
+**Status**: ✅ Complete. Unit 138 → 144, e2e 126 → 131, 0 skipped with `STORAGE_TEST_ENDPOINT` set.
+- `src/storage/in-memory-upload-storage.spec.ts` adds 6 tests: 1 byte then 4 MiB and 5 242 879 bytes then 1 byte → `'rejected'`; wrong ETag → `'rejected'`; out of order (both parts ≥ 5 MiB, so only the order rule applies) → `'rejected'`; each leaves the upload in progress; 5 MiB non-final parts complete; abort discards and a second abort resolves.
+- `test/s3-upload-storage.e2e-spec.ts` adds 4 RustFS cases (the three refusals, each followed by abort, no upload in progress, `listParts` → `'gone'`, second abort resolves; the missing bucket near-miss) and `abortMultipart` to the unreachable-storage table.
+- Existing tests changed: none. No test relied on the double's plain `Error`, and no existing flow sends a non-final part under 5 MiB (`uploadParts` sends 16 MiB parts; the other flows send one part).
+- Negatives (scratch copy, restored): without the `isRejectedParts` branch 3 RustFS tests fail; without the `NoSuchUpload` guard in `abortMultipart` 3 fail; mapping every error to `'rejected'` fails the near-miss and the unreachable `complete`. In the double, dropping the ETag, order or size rule fails its own test(s), and a minimum of 5 MiB + 1 fails the 5 MiB near-miss.
 
 ---
 
