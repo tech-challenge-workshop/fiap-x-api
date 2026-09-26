@@ -111,12 +111,13 @@ T11
 - Skill: NONE
 
 **Done when**:
-- [ ] Each of `OIDC_ISSUER`, `OIDC_AUDIENCE`, `OIDC_JWKS_URL` missing → an error naming it; blank counts as missing
-- [ ] `OIDC_JWKS_TIMEOUT_MS` defaults to 2000; a non-positive or non-numeric value → error naming it
-- [ ] Quick gate passes; at least 6 new tests
+- [x] Each of `OIDC_ISSUER`, `OIDC_AUDIENCE`, `OIDC_JWKS_URL` missing → an error naming it; blank counts as missing
+- [x] `OIDC_JWKS_TIMEOUT_MS` defaults to 2000; a non-positive or non-numeric value → error naming it
+- [x] Quick gate passes; at least 6 new tests
 
 **Tests**: unit
 **Gate**: quick
+**Status**: ✅ Complete. 11 new unit tests in `src/auth/oidc.config.spec.ts` (unit 18 → 29).
 
 ---
 
