@@ -5,10 +5,22 @@ import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { CATALOG_CLIENT } from './../src/processing-requests/services/create-processing-request.service';
 import { InMemoryCatalogClient } from './../src/processing-requests/adapters/in-memory-catalog-client.adapter';
+import { TestIdentityProvider } from './support/test-identity-provider';
 
 describe('CreateProcessingRequestController (e2e)', () => {
+  const idp = new TestIdentityProvider();
   let app: INestApplication<App>;
   let catalogClient: InMemoryCatalogClient;
+  let token: string;
+
+  beforeAll(async () => {
+    await idp.start();
+    token = await idp.token();
+  });
+
+  afterAll(async () => {
+    await idp.stop();
+  });
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -30,6 +42,7 @@ describe('CreateProcessingRequestController (e2e)', () => {
   it('returns 201 and a processingRequestId for valid input', () => {
     return request(app.getHttpServer())
       .post('/processing-requests')
+      .set('Authorization', `Bearer ${token}`)
       .send({
         ownerUserId: 'user-123',
         sourceStorageKey: 'videos/clip.mp4',
@@ -49,6 +62,7 @@ describe('CreateProcessingRequestController (e2e)', () => {
   it('returns 400 when ownerUserId is missing', () => {
     return request(app.getHttpServer())
       .post('/processing-requests')
+      .set('Authorization', `Bearer ${token}`)
       .send({
         sourceStorageKey: 'videos/clip.mp4',
       })
@@ -58,6 +72,7 @@ describe('CreateProcessingRequestController (e2e)', () => {
   it('returns 400 when sourceStorageKey is missing', () => {
     return request(app.getHttpServer())
       .post('/processing-requests')
+      .set('Authorization', `Bearer ${token}`)
       .send({
         ownerUserId: 'user-123',
       })
@@ -67,6 +82,7 @@ describe('CreateProcessingRequestController (e2e)', () => {
   it('returns 400 when both fields are missing', () => {
     return request(app.getHttpServer())
       .post('/processing-requests')
+      .set('Authorization', `Bearer ${token}`)
       .send({})
       .expect(400);
   });
@@ -76,6 +92,7 @@ describe('CreateProcessingRequestController (e2e)', () => {
 
     return request(app.getHttpServer())
       .post('/processing-requests')
+      .set('Authorization', `Bearer ${token}`)
       .send({
         ownerUserId: 'user-123',
         sourceStorageKey: 'videos/clip.mp4',
