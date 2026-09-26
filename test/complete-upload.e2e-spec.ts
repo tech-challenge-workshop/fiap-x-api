@@ -264,6 +264,49 @@ describe('POST /uploads/:uploadId/complete (e2e)', () => {
     await confirm(app, alice, upload.uploadId, 'k'.repeat(255)).expect(201);
   });
 
+  // A DEL (\x7F) cannot reach the API: Node's HTTP parser answers it with a
+  // bare 400 before any route runs, so a tab and a non-ASCII byte stand for
+  // the characters outside printable ASCII.
+  it.each<[string, string]>([
+    ['a tab', 'key\twith-tab'],
+    ['a non-ASCII character', 'caf\u00e9'],
+  ])(
+    'answers 400 for an Idempotency-Key containing %s, without touching storage or completing the upload (AC P5.5)',
+    async (_, idempotencyKey) => {
+      const upload = await uploaded();
+      const storageCalls = countCatalogCalls(storage);
+      const catalogCalls = countCatalogCalls(catalog);
+
+      const res = await confirm(
+        app,
+        alice,
+        upload.uploadId,
+        idempotencyKey,
+      ).expect(400);
+
+      expect(res.body).toEqual({
+        statusCode: 400,
+        message: 'Idempotency-Key must be 1 to 255 printable ASCII characters',
+      });
+      expect(storageCalls()).toBe(0);
+      expect(catalogCalls()).toBe(0);
+      await expect(stillInProgress(upload)).resolves.toBeDefined();
+    },
+  );
+
+  it('accepts an Idempotency-Key containing a space (near-miss of AC P5.5)', async () => {
+    const upload = await uploaded();
+    const createSpy = jest.spyOn(catalog, 'createProcessingRequest');
+
+    await confirm(app, alice, upload.uploadId, 'key with space').expect(201);
+
+    expect(createSpy).toHaveBeenCalledWith(
+      'alice',
+      upload.key,
+      'key with space',
+    );
+  });
+
   it('answers 400 when no part was uploaded, leaving the upload in progress and creating nothing (AC P2.7)', async () => {
     const upload = await startUpload(app, storage, alice, 20 * MiB);
     const catalogCalls = countCatalogCalls(catalog);
