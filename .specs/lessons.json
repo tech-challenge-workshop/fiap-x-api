@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 13,
+  "next_id": 16,
   "lessons": [
     {
       "id": "L-001",
@@ -220,6 +220,60 @@
       ],
       "created": "2026-09-26T06:00:08Z",
       "last_seen": "2026-09-26T06:00:08Z"
+    },
+    {
+      "id": "L-013",
+      "key": "gate_fail::an e2e server must listen on the exact address the client dials listen 0 on the wildcard while dialing 127 0 0 1 lets another local process answer",
+      "text": "An e2e server must listen on the exact address the client dials; listen(0) on the wildcard while dialing 127.0.0.1 lets another local process answer.",
+      "signal": "gate_fail",
+      "scope": "e2e",
+      "status": "candidate",
+      "features": [
+        "api-hardening"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "test/support/upload-flow.ts:24 (e2e)"
+      ],
+      "created": "2026-09-26T14:22:30Z",
+      "last_seen": "2026-09-26T14:22:30Z"
+    },
+    {
+      "id": "L-014",
+      "key": "surviving_mutant::a guarantee enforced only by lint config needs its own check that the rule is present and must cover aliases such as globalthis console and process stdout",
+      "text": "A guarantee enforced only by lint config needs its own check that the rule is present, and must cover aliases such as globalThis.console and process.stdout.",
+      "signal": "surviving_mutant",
+      "scope": "lint",
+      "status": "candidate",
+      "features": [
+        "api-hardening"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "eslint.config.mjs:35 (lint)"
+      ],
+      "created": "2026-09-26T14:22:30Z",
+      "last_seen": "2026-09-26T14:22:30Z"
+    },
+    {
+      "id": "L-015",
+      "key": "spec_precision_gap::probe what the http stack lets through before pinning a character rule at the http layer test the rest at the service level",
+      "text": "Probe what the HTTP stack lets through before pinning a character rule at the HTTP layer; test the rest at the service level.",
+      "signal": "spec_precision_gap",
+      "scope": "interface",
+      "status": "candidate",
+      "features": [
+        "api-hardening"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/uploads/complete-upload.service.ts:22 (interface)"
+      ],
+      "created": "2026-09-26T14:22:30Z",
+      "last_seen": "2026-09-26T14:22:30Z"
     }
   ]
 }

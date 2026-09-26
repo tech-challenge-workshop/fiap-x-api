@@ -138,14 +138,14 @@ Decisions of 2026-09-26: V32 = `200` with the same request; V33 = `contentType` 
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| HARD-01 | P1: Invalid parts are the client's error (V28) | Execute | Implementing (T1, T2 done) |
-| HARD-02 | P2: One upload, one request (V32) | Execute | Implementing (T6 done) |
-| HARD-03 | P3: `contentType` is case-insensitive (V33) | Execute | Implementing (T5 done) |
-| HARD-04 | P4: Token never logged on the 503 and non-bearer paths (V21) | Execute | Implementing (T8 done) |
-| HARD-05 | P4: No console output (V29) | Execute | Implementing (T10 done) |
-| HARD-06 | P5: Bearer scheme case-insensitive, tested (V22) | Execute | Implementing (T9 done) |
-| HARD-07 | P5: Internal and public storage clients, tested (V30) | Execute | Implementing (T4 done) |
-| HARD-08 | P5: `findObject` race and the key's character rule, tested (V31) | Execute | Implementing (T3, T7 done) |
+| HARD-01 | P1: Invalid parts are the client's error (V28) | Validate | Verified |
+| HARD-02 | P2: One upload, one request (V32) | Validate | Verified |
+| HARD-03 | P3: `contentType` is case-insensitive (V33) | Validate | Verified |
+| HARD-04 | P4: Token never logged on the 503 and non-bearer paths (V21) | Validate | Verified |
+| HARD-05 | P4: No console output (V29) | Validate | Implementing (open: V41, the rule itself is unguarded and globalThis.console / process.stdout pass lint) |
+| HARD-06 | P5: Bearer scheme case-insensitive, tested (V22) | Validate | Verified |
+| HARD-07 | P5: Internal and public storage clients, tested (V30) | Validate | Verified |
+| HARD-08 | P5: `findObject` race and the key's character rule, tested (V31) | Validate | Verified |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
 
