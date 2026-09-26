@@ -1,5 +1,7 @@
 import {
+  CatalogArchive,
   CatalogClient,
+  CatalogCreateOutcome,
   CatalogOwnedItem,
   CatalogOwnedPage,
 } from '../ports/catalog-client.port';
@@ -11,30 +13,51 @@ export class HttpCatalogClient implements CatalogClient {
   async createProcessingRequest(
     ownerUserId: string,
     sourceStorageKey: string,
-  ): Promise<{ processingRequestId: string; status: string }> {
-    let response: Response;
-    try {
-      response = await fetch(`${this.catalogBaseUrl}/processing-requests`, {
+    idempotencyKey: string,
+  ): Promise<CatalogCreateOutcome> {
+    const { status, data } = await this.request(
+      `${this.catalogBaseUrl}/processing-requests`,
+      {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ownerUserId, sourceStorageKey }),
-      });
-    } catch {
+        body: JSON.stringify({ ownerUserId, sourceStorageKey, idempotencyKey }),
+      },
+    );
+    if (status === 409) {
+      return { outcome: 'conflict' };
+    }
+    if ((status !== 201 && status !== 200) || !this.isValidResponse(data)) {
       throw new CatalogUnavailableError();
     }
+    return {
+      outcome: status === 201 ? 'created' : 'replayed',
+      processingRequestId: data.processingRequestId,
+      status: data.status,
+    };
+  }
 
-    let data: unknown;
-    try {
-      data = await response.json();
-    } catch {
+  async getArchive(
+    ownerUserId: string,
+    processingRequestId: string,
+  ): Promise<CatalogArchive | undefined> {
+    const { status, data } = await this.request(
+      `${this.ownedPath(ownerUserId)}/${encodeURIComponent(processingRequestId)}/archive`,
+    );
+    if (status === 404) {
+      return undefined;
+    }
+    if (status === 409) {
+      return 'not-completed';
+    }
+    if (
+      status !== 200 ||
+      !isRecord(data) ||
+      typeof data.zipStorageKey !== 'string' ||
+      data.zipStorageKey === ''
+    ) {
       throw new CatalogUnavailableError();
     }
-
-    if (!response.ok || !this.isValidResponse(data)) {
-      throw new CatalogUnavailableError();
-    }
-
-    return data;
+    return { zipStorageKey: data.zipStorageKey };
   }
 
   async listOwned(
@@ -46,7 +69,7 @@ export class HttpCatalogClient implements CatalogClient {
       page: String(page),
       pageSize: String(pageSize),
     });
-    const { status, data } = await this.get(
+    const { status, data } = await this.request(
       `${this.ownedPath(ownerUserId)}?${query.toString()}`,
     );
     if (status !== 200 || !isOwnedPage(data)) {
@@ -59,7 +82,7 @@ export class HttpCatalogClient implements CatalogClient {
     ownerUserId: string,
     processingRequestId: string,
   ): Promise<CatalogOwnedItem | undefined> {
-    const { status, data } = await this.get(
+    const { status, data } = await this.request(
       `${this.ownedPath(ownerUserId)}/${encodeURIComponent(processingRequestId)}`,
     );
     if (status === 404) {
@@ -76,9 +99,12 @@ export class HttpCatalogClient implements CatalogClient {
   }
 
   /** Any network or JSON failure is the Catalog being unavailable. */
-  private async get(url: string): Promise<{ status: number; data: unknown }> {
+  private async request(
+    url: string,
+    init?: RequestInit,
+  ): Promise<{ status: number; data: unknown }> {
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, init);
       return { status: response.status, data: await response.json() };
     } catch {
       throw new CatalogUnavailableError();

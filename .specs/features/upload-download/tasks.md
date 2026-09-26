@@ -215,12 +215,19 @@ Existing suites changed, setup only, no assertion touched:
 - Skill: NONE
 
 **Done when**:
-- [ ] HTTP adapter (local server): each status mapped; network failure and malformed body → `CatalogUnavailableError`; owner and id URL-encoded
-- [ ] In-memory: same key + same source → replayed; other source → conflict; archive per status
-- [ ] Quick gate passes; at least 10 new tests
+- [x] HTTP adapter (local server): each status mapped; network failure and malformed body → `CatalogUnavailableError`; owner and id URL-encoded
+- [x] In-memory: same key + same source → replayed; other source → conflict; archive per status
+- [x] Quick gate passes; at least 10 new tests
 
 **Tests**: unit
 **Gate**: quick
+
+**Status**: ✅ Complete. 29 new unit tests (unit 118 → 147).
+- HTTP create: 201 → `created`, 200 → `replayed` (both keep only id and status), 409 → `conflict`. A 400, a 500, a 202, a non-JSON body, a body without id, or no connection → `CatalogUnavailableError`. The body now carries `idempotencyKey`.
+- HTTP archive: 200 `{zipStorageKey}`, 409 → `'not-completed'`, 404 → `undefined`, the owner and id encoded in `/owners/:owner/processing-requests/:id/archive`. Anything else, or an empty or non-string key → `CatalogUnavailableError`.
+- In-memory: idempotent per `(owner, key)`; `setStatus(id, status, zipStorageKey?)` stands in for the Worker in tests. `getArchive` returns the key only for `COMPLETED`.
+- Existing tests changed for the new signature, no assertion weakened: the fetch-spy create tests pass a key and expect it in the body; their mocked responses now carry a status. The malformed-body test now answers 201, so only the shape check can reject it. The in-memory tests pass a key per call.
+- **Transitional deviation:** `CreateProcessingRequestService` (removed in T9) passes a fresh `randomUUID()` key so it compiles against the new port. Its unit test and the matching `processing-requests` e2e assertion now expect a third `expect.any(String)` argument. Both go away in T9.
 
 ---
 

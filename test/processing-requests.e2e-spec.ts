@@ -88,7 +88,11 @@ describe('POST /processing-requests (e2e)', () => {
       .send({ ownerUserId: 'bob', sourceStorageKey: 'videos/clip.mp4' })
       .expect(201);
 
-    expect(createSpy).toHaveBeenCalledWith('alice', 'videos/clip.mp4');
+    expect(createSpy).toHaveBeenCalledWith(
+      'alice',
+      'videos/clip.mp4',
+      expect.any(String),
+    );
     const body = res.body as Record<string, unknown>;
     expect(body).toEqual({
       processingRequestId: expect.any(String) as string,

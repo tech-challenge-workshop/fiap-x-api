@@ -34,6 +34,7 @@ describe('CreateProcessingRequestService', () => {
     const createProcessingRequestSpy = jest
       .spyOn(catalogClient, 'createProcessingRequest')
       .mockResolvedValue({
+        outcome: 'created',
         processingRequestId: 'pr-123',
         status: 'RECEIVED',
       });
@@ -46,6 +47,7 @@ describe('CreateProcessingRequestService', () => {
     expect(createProcessingRequestSpy).toHaveBeenCalledWith(
       'alice',
       'videos/clip.mp4',
+      expect.any(String),
     );
     expect(result).toEqual({
       processingRequestId: 'pr-123',
