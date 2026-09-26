@@ -79,11 +79,13 @@ T9
 - Skill: NONE
 
 **Done when**:
-- [ ] Both pinned exactly; the built app loads them
-- [ ] Build gate passes
+- [x] Both pinned exactly; the built app loads them
+- [x] Build gate passes
 
 **Tests**: none
 **Gate**: build
+
+**Status**: ✅ Complete. `npm install --save-exact` pinned both at `3.1137.0` (no caret); `npm ls` shows one copy of each. Both modules `require()` from `dist/` in Node. Build gate green (unit 82, e2e 54, unchanged).
 
 ---
 
