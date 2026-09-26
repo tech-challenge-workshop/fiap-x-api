@@ -355,13 +355,16 @@ T12
 - Skill: NONE
 
 **Done when**:
-- [ ] With the server stopped: a token signed by the already-used key → 200 (AC P1.8); a token signed by a new key → 503 `Authentication temporarily unavailable` (AC P1.7), Catalog not called
-- [ ] With the server back and serving the new key: that token → 200
-- [ ] Verified negatively in a scratch copy: swapping `SigningKeyCache` for `createRemoteJWKSet` makes the 503 assertion fail
-- [ ] Build gate passes
+- [x] With the server stopped: a token signed by the already-used key → 200 (AC P1.8); a token signed by a new key → 503 `Authentication temporarily unavailable` (AC P1.7), Catalog not called
+- [x] With the server back and serving the new key: that token → 200
+- [x] Verified negatively in a scratch copy: swapping `SigningKeyCache` for `createRemoteJWKSet` makes the 503 assertion fail
+- [x] Build gate passes
 
 **Tests**: e2e
 **Gate**: build
+**Status**: ✅ Complete. 3 new e2e tests in `test/auth-outage.e2e-spec.ts` (e2e 47 → 50), unit unchanged at 80. Build gate green.
+- Each test boots a fresh `AppModule`, authenticates once over `GET /processing-requests` so the key is cached, then stops the key-set server. `:73-76` a new token from the cached key → 200 and the Catalog is asked for `bob`; `:83-89` a token from a key never fetched → 503 with the exact body and zero Catalog calls; `:95-104` after the server restarts serving both keys, the same token → 200 for `carol`.
+- Negative check, in a scratch copy outside the repository (removed afterwards; the real tree was not edited and `git stash` was not used): `SigningKeyCache.keyFor` delegating to `createRemoteJWKSet(new URL(jwksUrl), { timeoutDuration })`. Result: 2 of 3 tests failed, both with `expected 503 "Service Unavailable", got 401 "Unauthorized"`. `jose`'s cooldown skips the refetch that would reveal the outage, as the design's spike predicted. The cached-key test still passed, as expected within `jose`'s cache window.
 
 ---
 
