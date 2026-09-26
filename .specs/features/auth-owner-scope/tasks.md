@@ -135,13 +135,14 @@ T11
 - Skill: NONE
 
 **Done when**:
-- [ ] Tested against a key set served by a local `node:http` server: first use fetches; a cached `kid` resolves with the server stopped (AC P1.8); an unknown `kid` with the server stopped → `IdentityProviderUnavailableError` (AC P1.7); an unknown `kid` with the server up and still missing → `JWKSNoMatchingKey`; a rotated key is picked up after one refetch
-- [ ] Two concurrent misses cause exactly one fetch
-- [ ] A hanging server exceeds the timeout → `IdentityProviderUnavailableError`
-- [ ] Quick gate passes; at least 7 new tests
+- [x] Tested against a key set served by a local `node:http` server: first use fetches; a cached `kid` resolves with the server stopped (AC P1.8); an unknown `kid` with the server stopped → `IdentityProviderUnavailableError` (AC P1.7); an unknown `kid` with the server up and still missing → `JWKSNoMatchingKey`; a rotated key is picked up after one refetch
+- [x] Two concurrent misses cause exactly one fetch
+- [x] A hanging server exceeds the timeout → `IdentityProviderUnavailableError`
+- [x] Quick gate passes; at least 7 new tests
 
 **Tests**: unit
 **Gate**: quick
+**Status**: ✅ Complete. 11 new unit tests (unit 29 → 40). The key-set server helper lives in `test/support/jwks-server.ts` for reuse by T5 and T11. The error class is `src/auth/identity-provider-unavailable.error.ts`.
 
 ---
 
