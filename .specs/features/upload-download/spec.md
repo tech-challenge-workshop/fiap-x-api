@@ -144,16 +144,16 @@ Decisions from the gray-area discussion of 2026-09-26 are in `fiap-x-platform/.s
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| UPL-01 | P1: Start an upload | Execute | Implementing |
-| UPL-02 | P1: Start an upload | Execute | Implementing |
-| UPL-03 | P2: Confirm an upload, exactly once | Execute | Implementing |
-| UPL-04 | P2: Confirm an upload, exactly once | Execute | Implementing |
-| UPL-05 | P2: Confirm an upload, exactly once | Execute | Implementing |
-| UPL-06 | P2: Confirm an upload, exactly once | Execute | Implementing |
-| UPL-07 | P3: Download my ZIP | Execute | Implementing |
-| UPL-08 | P3: Download my ZIP | Execute | Implementing |
-| UPL-09 | P4: The key-supplied create path is gone | Execute | Implementing |
-| UPL-10 | P1–P3: no key as a field, no URL in logs | Execute | Implementing |
+| UPL-01 | P1: Start an upload | Validate | Verified |
+| UPL-02 | P1: Start an upload | Validate | Verified |
+| UPL-03 | P2: Confirm an upload, exactly once | Validate | Verified |
+| UPL-04 | P2: Confirm an upload, exactly once | Validate | Verified |
+| UPL-05 | P2: Confirm an upload, exactly once | Validate | Implementing (open: F5, printable-ASCII key rule untested) |
+| UPL-06 | P2: Confirm an upload, exactly once | Validate | Implementing (open: F1, undersized or invalid parts answer 502 instead of 400) |
+| UPL-07 | P3: Download my ZIP | Validate | Implementing (open: F3, internal-vs-public client routing untested) |
+| UPL-08 | P3: Download my ZIP | Validate | Verified |
+| UPL-09 | P4: The key-supplied create path is gone | Validate | Verified |
+| UPL-10 | P1–P3: no key as a field, no URL in logs | Validate | Implementing (open: F2, console output not covered by the log checks) |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
 
