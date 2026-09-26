@@ -5,6 +5,8 @@ import { ListOwnProcessingRequestsService } from './services/list-own-processing
 import { GetOwnProcessingRequestService } from './services/get-own-processing-request.service';
 import { InMemoryCatalogClient } from './adapters/in-memory-catalog-client.adapter';
 import { HttpCatalogClient } from './adapters/http-catalog-client.adapter';
+import { DownloadService } from './services/download.service';
+import { StorageModule } from '../storage/storage.module';
 
 const catalogClientProvider = {
   provide: CATALOG_CLIENT,
@@ -17,10 +19,12 @@ const catalogClientProvider = {
 };
 
 @Module({
+  imports: [StorageModule],
   controllers: [ProcessingRequestsController],
   providers: [
     ListOwnProcessingRequestsService,
     GetOwnProcessingRequestService,
+    DownloadService,
     catalogClientProvider,
   ],
   exports: [CATALOG_CLIENT],

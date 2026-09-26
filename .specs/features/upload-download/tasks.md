@@ -350,13 +350,20 @@ Existing suites changed, setup only, no assertion touched:
 - Skill: NONE
 
 **Done when**:
-- [ ] e2e: `COMPLETED` → `200 {url, expiresAt}` with `expiresAt` five minutes ahead (fake clock) and the presign called with the archive key and `frames-<id>.zip`; a second call issues a new URL
-- [ ] 409 for `QUEUED`/`PROCESSING`/`FAILED`; 404 byte-identical for another owner, random UUID, malformed id; 502 on Catalog or storage failure
-- [ ] No `zipStorageKey` field; no URL in logs
-- [ ] Build gate passes
+- [x] e2e: `COMPLETED` → `200 {url, expiresAt}` with `expiresAt` five minutes ahead (fake clock) and the presign called with the archive key and `frames-<id>.zip`; a second call issues a new URL
+- [x] 409 for `QUEUED`/`PROCESSING`/`FAILED`; 404 byte-identical for another owner, random UUID, malformed id; 502 on Catalog or storage failure
+- [x] No `zipStorageKey` field; no URL in logs
+- [x] Build gate passes
 
 **Tests**: e2e
 **Gate**: build
+
+**Status**: ✅ Complete. `test/download.e2e-spec.ts` adds 11 tests (e2e 115 → 126, 0 skipped with `STORAGE_TEST_ENDPOINT` set; unit 138 unchanged). Build gate green: lint, typecheck, unit, e2e, build.
+- `DownloadService` asks the Catalog for the archive, then presigns a GET for `DOWNLOAD_URL_TTL_SECONDS` (default 300) named `frames-<id>.zip`. `expiresAt` is taken before signing. 409 "Processing request is not completed" issues no URL.
+- Each 404 is compared byte for byte, `content-type` included, with the `GET /processing-requests/:id` 404 for the same caller.
+- `RECEIVED` is covered with `QUEUED`, `PROCESSING` and `FAILED` (AC P3.3: any status other than `COMPLETED`).
+- `ProcessingRequestsModule` imports `StorageModule`. The T9 route-table test gains `GET /processing-requests/:id/download`, an entry added, nothing weakened.
+- A throwaway smoke, not committed, ran the real S3 adapter against RustFS 1.0.0 with the in-memory Catalog. The presigned parts took real PUTs (200). Confirmation answered 400 with no key, 404 for another user, 201, a 200 replay, 400 with no parts, 409 on a reused key, 400 on a size mismatch, then 404. Download answered 409, then 200, and the URL served the object with `attachment; filename="frames-<id>.zip"`. Bob got 404; `POST /processing-requests` got 404. No signature appeared in the logs.
 
 ---
 

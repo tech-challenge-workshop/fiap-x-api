@@ -5,6 +5,7 @@ import { ListOwnProcessingRequestsService } from '../services/list-own-processin
 import { ListQueryDto } from '../dtos/list-query.dto';
 import { GetOwnProcessingRequestService } from '../services/get-own-processing-request.service';
 import { OwnedItem, OwnedPage } from '../projection';
+import { DownloadService, IssuedDownload } from '../services/download.service';
 
 /**
  * Every route acts for the authenticated owner, never for one named in the
@@ -17,6 +18,7 @@ export class ProcessingRequestsController {
   constructor(
     private readonly listService: ListOwnProcessingRequestsService,
     private readonly getService: GetOwnProcessingRequestService,
+    private readonly downloadService: DownloadService,
   ) {}
 
   @Get()
@@ -30,5 +32,14 @@ export class ProcessingRequestsController {
   @Get(':id')
   get(@Owner() owner: string, @Param('id') id: string): Promise<OwnedItem> {
     return this.getService.execute(owner, id);
+  }
+
+  /** A new short-lived URL for the ZIP of the owner's completed request. */
+  @Get(':id/download')
+  download(
+    @Owner() owner: string,
+    @Param('id') id: string,
+  ): Promise<IssuedDownload> {
+    return this.downloadService.execute(owner, id);
   }
 }
