@@ -56,6 +56,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: spec.md edge case non-Bearer; src/auth/jwt-auth.guard.ts:20
 - last seen: 2026-09-26T04:21:10Z
 
+### L-008 - When a spec sentence is added to pin existing behaviour, add a test that asserts it in the same change
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · harmful: 0
+- features: auth-owner-scope
+- evidence: M34,M35 test/auth.e2e-spec.ts:85
+- last seen: 2026-09-26T04:31:07Z
+
+### L-009 - Assert a must-not-log property on every code path that writes a log line, not only on one rejection path
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · harmful: 0
+- features: auth-owner-scope
+- evidence: M42,M43 src/auth/jwt-auth.guard.ts:48,57
+- last seen: 2026-09-26T04:31:07Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
