@@ -285,13 +285,30 @@ T10
 
 **Done when**:
 
-- [ ] A key with a tab or `\x7F` → `400 Idempotency-Key must be 1 to 255 printable ASCII characters`, and storage is not completed
-- [ ] Near-misses: a 255-character printable key → accepted; a key containing a space → accepted
-- [ ] Removing `PRINTABLE_ASCII` turns a test red
-- [ ] Full gate passes
+- [x] A key with a tab or `\x7F` → `400 Idempotency-Key must be 1 to 255 printable ASCII characters`, and storage is not completed (`\x7F` replaced by a non-ASCII byte, see Status)
+- [x] Near-misses: a 255-character printable key → accepted; a key containing a space → accepted
+- [x] Removing `PRINTABLE_ASCII` turns a test red
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
+
+**Status**: ✅ Complete. E2e 143 → 146, unit 150 unchanged, 0 skipped with `STORAGE_TEST_ENDPOINT` set.
+- `test/complete-upload.e2e-spec.ts` adds:
+  - keys `key\twith-tab` and `café` → `400` with the exact message, no storage or Catalog call, and the upload still in progress;
+  - a key with a space → `201`, passed to the Catalog verbatim.
+- The 255-character near-miss is the existing `accepts exactly 255` case.
+- Deviation: `\x7F` cannot reach the API. Probed on this Node:
+  - its HTTP client refuses to send it (`ERR_INVALID_CHAR`);
+  - its HTTP server answers a raw `\x7F` with a bodyless `400 Bad Request` before any route runs.
+
+  A test for it would prove Node's parser, not the rule, and would pass without `PRINTABLE_ASCII`. So `é` (byte 0xE9) is the second character outside printable ASCII, next to the tab.
+- Existing tests changed: none.
+- Negatives (scratch copy, restored):
+  - Removing the `PRINTABLE_ASCII` check fails 3 tests (both new `400` cases and the existing over-255 case).
+  - A length-only rule fails both new `400` cases.
+  - Excluding the space (`\x21-\x7E`) fails the space near-miss.
+- Found while gating: `complete-upload.e2e-spec.ts` fails intermittently on a request answered with the wrong status (401 or 404 where the flow expects 404, 502 or 400). This predates the feature: at `e5b6e00` it failed 1 run in 60 (`expected 404, got 401`). Here it failed 3 runs in about 70. It is not caused by this task. The cause is not diagnosed; a stale kept-alive socket to an earlier test's app is the guess.
 
 ---
 
