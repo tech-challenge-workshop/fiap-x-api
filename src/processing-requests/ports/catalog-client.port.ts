@@ -1,3 +1,5 @@
+export const CATALOG_CLIENT = Symbol('CATALOG_CLIENT');
+
 /** An item of the Catalog's owner-scoped reads, re-declared locally (AD-003). */
 export interface CatalogOwnedItem {
   processingRequestId: string;

@@ -313,13 +313,26 @@ Existing suites changed, setup only, no assertion touched:
 - Skill: NONE
 
 **Done when**:
-- [ ] e2e: `POST /processing-requests` with a valid token → 404
-- [ ] No route accepts a storage key (a test asserts the route table)
-- [ ] Each deleted or rewritten test listed with its reason; test counts may fall only by the deleted route's own tests
-- [ ] Full gate passes
+- [x] e2e: `POST /processing-requests` with a valid token → 404
+- [x] No route accepts a storage key (a test asserts the route table)
+- [x] Each deleted or rewritten test listed with its reason; test counts may fall only by the deleted route's own tests
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
+
+**Status**: ✅ Complete. Unit 147 → 138; e2e 117 → 115; 0 skipped. The drops are exactly the removed route's own tests.
+- Deleted with the route: `CreateProcessingRequestService` + its spec (3 unit tests), `CreateProcessingRequestDto` + its spec (6 unit tests), `CreateProcessingRequestResponseDto`.
+- `CATALOG_CLIENT` moved to `ports/catalog-client.port.ts`; every import follows it.
+- `test/processing-requests.e2e-spec.ts`: its 6 tests exercised only the removed route (201, missing owner, owner from the token, two 400s, 502). They are replaced by 4 tests:
+  - `POST /processing-requests` with a valid token → 404, nothing reaches the Catalog.
+  - The exact route table: `GET /`, `GET /health`, `GET /processing-requests`, `GET /processing-requests/:id`, `POST /uploads`, `POST /uploads/:uploadId/complete`.
+  - `POST /uploads` with `sourceStorageKey` → 400 "property sourceStorageKey should not exist", storage untouched.
+  - A `sourceStorageKey` sent to the confirmation is ignored: the Catalog gets the generated key.
+- Rewritten, no assertion weakened:
+  - `get-processing-request` and `list-processing-requests` now create through `createThroughUpload` (start, parts, confirm). Their "never shows the key" checks now use the generated key instead of a made-up one.
+  - `auth` used the removed route only as a protected route that reaches the Catalog. It now calls `GET /processing-requests`: the success case expects 200 instead of 201, and still exactly one Catalog call. The 401, 503 and log assertions are unchanged.
+- The T6 transitional deviation is gone with the service.
 
 ---
 

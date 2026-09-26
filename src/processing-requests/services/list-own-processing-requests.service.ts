@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import type { CatalogClient } from '../ports/catalog-client.port';
 import { CatalogUnavailableError } from '../errors/catalog-unavailable.error';
-import { CATALOG_CLIENT } from './create-processing-request.service';
+import { CATALOG_CLIENT } from '../ports/catalog-client.port';
 import { OwnedPage, projectForOwner } from '../projection';
 
 @Injectable()

@@ -152,7 +152,7 @@ Decisions from the gray-area discussion of 2026-09-26 are in `fiap-x-platform/.s
 | UPL-06 | P2: Confirm an upload, exactly once | Execute | Implementing |
 | UPL-07 | P3: Download my ZIP | Execute | Implementing |
 | UPL-08 | P3: Download my ZIP | Tasks | In Tasks |
-| UPL-09 | P4: The key-supplied create path is gone | Tasks | In Tasks |
+| UPL-09 | P4: The key-supplied create path is gone | Execute | Implementing |
 | UPL-10 | P1–P3: no key as a field, no URL in logs | Execute | Implementing |
 
 **ID format:** `[CATEGORY]-[NUMBER]`

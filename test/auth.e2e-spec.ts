@@ -7,7 +7,7 @@ import {
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
-import { CATALOG_CLIENT } from './../src/processing-requests/services/create-processing-request.service';
+import { CATALOG_CLIENT } from './../src/processing-requests/ports/catalog-client.port';
 import { InMemoryCatalogClient } from './../src/processing-requests/adapters/in-memory-catalog-client.adapter';
 import { InMemoryUploadStorage } from './../src/storage/in-memory-upload-storage';
 import { UPLOAD_STORAGE } from './../src/storage/upload-storage.port';
@@ -38,10 +38,6 @@ describe('Authentication (e2e)', () => {
   let catalogCalls: () => number;
   let logger: CapturingLogger;
 
-  const validBody = {
-    ownerUserId: 'user-123',
-    sourceStorageKey: 'videos/clip.mp4',
-  };
   const nowSeconds = () => Math.floor(Date.now() / 1000);
 
   beforeAll(async () => {
@@ -83,18 +79,19 @@ describe('Authentication (e2e)', () => {
     await app.close();
   });
 
-  const create = (authorization?: string) => {
-    const req = request(app.getHttpServer()).post('/processing-requests');
+  /** A protected route that reaches the Catalog (the S5 create route is gone). */
+  const callProtected = (authorization?: string) => {
+    const req = request(app.getHttpServer()).get('/processing-requests');
     if (authorization !== undefined) {
       void req.set('Authorization', authorization);
     }
-    return req.send(validBody);
+    return req.send();
   };
 
   it('accepts a valid bearer token and reaches the Catalog', async () => {
-    const res = await create(`Bearer ${await idp.token()}`);
+    const res = await callProtected(`Bearer ${await idp.token()}`);
 
-    expect(res.status).toBe(201);
+    expect(res.status).toBe(200);
     expect(catalogCalls()).toBe(1);
   });
 
@@ -154,7 +151,7 @@ describe('Authentication (e2e)', () => {
         `Bearer ${await idp.token({ exp: undefined, iat: undefined })}`,
     ],
   ])('responds 401 without calling the Catalog for %s', async (_, header) => {
-    const res = await create(await header());
+    const res = await callProtected(await header());
 
     expect(res.status).toBe(401);
     expect(res.body).toEqual({ statusCode: 401, message: 'Unauthorized' });
@@ -165,7 +162,7 @@ describe('Authentication (e2e)', () => {
     const token = await idp.token();
     await idp.server.stop();
     try {
-      const res = await create(`Bearer ${token}`);
+      const res = await callProtected(`Bearer ${token}`);
 
       expect(res.status).toBe(503);
       expect(res.body).toEqual({
@@ -193,8 +190,8 @@ describe('Authentication (e2e)', () => {
     const tampered = tamperPayload(await idp.token());
     const rogue = await signToken(rogueKey);
 
-    await create(`Bearer ${tampered}`).expect(401);
-    await create(`Bearer ${rogue}`).expect(401);
+    await callProtected(`Bearer ${tampered}`).expect(401);
+    await callProtected(`Bearer ${rogue}`).expect(401);
 
     const logs = logger.lines.join('\n');
     expect(logs).toContain('JWSSignatureVerificationFailed');
