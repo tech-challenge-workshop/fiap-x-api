@@ -86,6 +86,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: src/storage/s3-upload-storage.ts:77 (storage)
 - last seen: 2026-09-26T06:00:08Z
 
+### L-013 - An e2e server must listen on the exact address the client dials; listen(0) on the wildcard while dialing 127.0.0.1 lets another local process answer.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `e2e` · harmful: 0
+- features: api-hardening
+- evidence: test/support/upload-flow.ts:24 (e2e)
+- last seen: 2026-09-26T14:22:30Z
+
+### L-014 - A guarantee enforced only by lint config needs its own check that the rule is present, and must cover aliases such as globalThis.console and process.stdout.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `lint` · harmful: 0
+- features: api-hardening
+- evidence: eslint.config.mjs:35 (lint)
+- last seen: 2026-09-26T14:22:30Z
+
+### L-015 - Probe what the HTTP stack lets through before pinning a character rule at the HTTP layer; test the rest at the service level.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `interface` · harmful: 0
+- features: api-hardening
+- evidence: src/uploads/complete-upload.service.ts:22 (interface)
+- last seen: 2026-09-26T14:22:30Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
