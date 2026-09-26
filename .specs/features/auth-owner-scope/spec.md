@@ -145,7 +145,7 @@ Decisions from the gray-area discussion of 2026-09-26 are in `fiap-x-platform/.s
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| AUTH-01 | P1: Only authenticated calls reach the system | Tasks | In Tasks |
+| AUTH-01 | P1: Only authenticated calls reach the system | Execute | Implementing |
 | AUTH-02 | P1: Only authenticated calls reach the system | Tasks | In Tasks |
 | AUTH-03 | P1: Only authenticated calls reach the system | Tasks | In Tasks |
 | AUTH-04 | P2: Requests are owned by the authenticated user | Tasks | In Tasks |
