@@ -245,14 +245,23 @@ Existing suites changed, setup only, no assertion touched:
 - Skill: NONE
 
 **Done when**:
-- [ ] e2e: 201 with `partSize` 16 777 216, part numbers 1..ceil(size/partSize) for sizes 1, exactly 2×partSize, and 2×partSize+1; `expiresAt` one hour ahead (fake clock); key under `sources/<sub>/` with the lowercase extension (asserted on the double); no key field in the body
-- [ ] 400 naming the field for: `.avi`, no extension, `.MP4` with `video/quicktime`, `.mov` with `video/mp4`, size 0, 524 288 001, non-integer
-- [ ] 401 without a token and storage untouched; storage failure → 502
-- [ ] No URL or `X-Amz-Signature` in captured logs
-- [ ] Full gate passes
+- [x] e2e: 201 with `partSize` 16 777 216, part numbers 1..ceil(size/partSize) for sizes 1, exactly 2×partSize, and 2×partSize+1; `expiresAt` one hour ahead (fake clock); key under `sources/<sub>/` with the lowercase extension (asserted on the double); no key field in the body
+- [x] 400 naming the field for: `.avi`, no extension, `.MP4` with `video/quicktime`, `.mov` with `video/mp4`, size 0, 524 288 001, non-integer
+- [x] 401 without a token and storage untouched; storage failure → 502
+- [x] No URL or `X-Amz-Signature` in captured logs
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
+
+**Status**: ✅ Complete. `test/start-upload.e2e-spec.ts` adds 22 tests (e2e 74 → 96, 0 skipped; unit 147 unchanged).
+- `src/uploads/`: `StartUploadDto`, `StartUploadService`, `UploadsController`, `UploadsModule` (imported by `AppModule`).
+- Each field has one constraint, so a bad field yields exactly one message. An invalid `fileName` names only `fileName`: `contentType` then accepts either video type.
+- `CatalogErrorFilter` now also catches `StorageUnavailableError` → `502 {statusCode:502, message:'Storage unavailable'}`. The storage error's own text is not echoed.
+- The clock test freezes only `Date`, at the real current time, so tokens stay valid; `expiresAt` must equal it + 3600 s exactly.
+- The log test proves the capture works (Nest's route line is present) before asserting that no URL and no signature appear, on a success and on a storage failure.
+- Beyond the listed cases: 256 characters rejected and 255 accepted (design DTO bound); the 500 MiB maximum gives 32 parts; a `sizeBytes` string and a non-video `contentType` are rejected.
+- **Spec-precision gap:** the spec does not say whether `contentType` matches case-sensitively. The API accepts only the exact lowercase types.
 
 ---
 
