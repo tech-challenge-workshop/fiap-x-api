@@ -217,12 +217,16 @@ T12
 - Skill: NONE
 
 **Done when**:
-- [ ] HTTP adapter tests (local server): success, 404 → `undefined`, 500, network failure, malformed body → `CatalogUnavailableError`; the owner is URL-encoded in the path
-- [ ] In-memory adapter: two owners never see each other's items
-- [ ] Quick gate passes; at least 8 new tests
+- [x] HTTP adapter tests (local server): success, 404 → `undefined`, 500, network failure, malformed body → `CatalogUnavailableError`; the owner is URL-encoded in the path
+- [x] In-memory adapter: two owners never see each other's items
+- [x] Quick gate passes; at least 8 new tests
 
 **Tests**: unit
 **Gate**: quick
+**Status**: ✅ Complete. 21 new unit tests (unit 54 → 75).
+- HTTP adapter against a local `node:http` server: exact path and query asserted, owner and id URL-encoded, 404 → `undefined` on `getOwned` only. A 404 on the list, any other non-200, a non-JSON body, a wrong shape and an unreachable Catalog each → `CatalogUnavailableError`.
+- In-memory adapter stores what it creates and filters by owner, newest first by creation order. Its reads return the whole record, `ownerUserId` and `sourceStorageKey` included, so the e2e suites prove the API's projection rather than the double's discretion. Its reject switch now applies to the reads too.
+- Adequacy: every Done-when item maps to `http-catalog-client.adapter.spec.ts:148-149,159,185,193,208-209,221,244,255` and `in-memory-catalog-client.adapter.spec.ts:39-59`; no test without a criterion.
 
 ---
 
