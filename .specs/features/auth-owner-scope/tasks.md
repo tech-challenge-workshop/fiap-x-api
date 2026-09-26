@@ -64,6 +64,7 @@ T8
 
 ```
 T11
+T12
 ```
 
 ---
@@ -344,10 +345,35 @@ T11
 
 ---
 
+### T12: Reject a token without `exp`
+
+**What**: Require `exp` (and `sub`) through `jwtVerify`'s `requiredClaims`, so a token that never expires is refused.
+**Where**: `src/auth/token-verifier.ts`
+**Depends on**: None
+**Reuses**: T4's verifier and its token helpers
+**Requirement**: AUTH-01 (spec edge case added during Execute)
+
+**Why**: Added by the orchestrator after T4 recorded that a token without `exp` is accepted. AD-005 names `exp` among the claims the guard relies on; accepting its absence makes a leaked token valid forever.
+
+**Tools**:
+
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] A validly signed token without `exp` is rejected with the class the guard maps to 401 (unit), and gets 401 over HTTP with the Catalog not called (e2e)
+- [ ] Every existing token test still passes
+- [ ] Build gate passes
+
+**Tests**: e2e
+**Gate**: build
+
+---
+
 ## Phase Execution Map
 
 ```
-Phase 1 (T1 T2 T3 T4 T5) then Phase 2 (T6 T7 T8 T9 T10) then Phase 3 (T11)
+Phase 1 (T1 T2 T3 T4 T5) then Phase 2 (T6 T7 T8 T9 T10) then Phase 3 (T11 T12)
 ```
 
 11 tasks pack into two batches at ~7 per worker, cutting on phase boundaries: **Phase 1** (5) and **Phases 2 + 3** (6). Cross-repository order for S5: `processing-catalog` first (this repository's `HttpCatalogClient` calls its new routes), then this repository, then `fiap-x-platform`.
@@ -369,6 +395,7 @@ Phase 1 (T1 T2 T3 T4 T5) then Phase 2 (T6 T7 T8 T9 T10) then Phase 3 (T11)
 | T9: List route | 1 route + service + query DTO | ⚠️ OK - cohesive; one endpoint |
 | T10: Get route | 1 route + service | ✅ Granular |
 | T11: Outage e2e | 1 test file | ✅ Granular |
+| T12: Require `exp` | 1 option on the verifier | ✅ Granular |
 
 ---
 
@@ -387,6 +414,7 @@ Phase 1 (T1 T2 T3 T4 T5) then Phase 2 (T6 T7 T8 T9 T10) then Phase 3 (T11)
 | T9 | T6, T7 | T6 → T9, T7 → T9 | ✅ Match |
 | T10 | T6, T7 | T6 → T10, T7 → T10 | ✅ Match |
 | T11 | None | — | ✅ Match |
+| T12 | None | — | ✅ Match |
 
 No task depends on a later phase. Phase 2 and 3 tasks rely on Phase 1 having completed (the guard provides `@Owner()`), which phase ordering guarantees.
 
@@ -407,5 +435,6 @@ No task depends on a later phase. Phase 2 and 3 tasks rely on Phase 1 having com
 | T9 | Controllers + services | e2e | e2e | ✅ OK |
 | T10 | Controllers + services | e2e | e2e | ✅ OK |
 | T11 | Guard + module wiring | e2e | e2e | ✅ OK |
+| T12 | Auth primitives + guard | e2e | e2e | ✅ OK |
 
 T1 is the only `Tests: none`, on a layer the matrix marks `none`; its correctness is proved by T3's first test importing `jose` under Jest and by the build gate loading the built module.
