@@ -97,6 +97,7 @@ describe('The key-supplied create path is gone (e2e)', () => {
         'GET /health',
         'GET /processing-requests',
         'GET /processing-requests/:id',
+        'GET /processing-requests/:id/download',
         'POST /uploads',
         'POST /uploads/:uploadId/complete',
       ].sort(),
