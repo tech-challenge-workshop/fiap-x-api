@@ -3,6 +3,7 @@ import { ProcessingRequestsController } from './controllers/processing-requests.
 import { CreateProcessingRequestService } from './services/create-processing-request.service';
 import { CATALOG_CLIENT } from './services/create-processing-request.service';
 import { ListOwnProcessingRequestsService } from './services/list-own-processing-requests.service';
+import { GetOwnProcessingRequestService } from './services/get-own-processing-request.service';
 import { InMemoryCatalogClient } from './adapters/in-memory-catalog-client.adapter';
 import { HttpCatalogClient } from './adapters/http-catalog-client.adapter';
 
@@ -21,6 +22,7 @@ const catalogClientProvider = {
   providers: [
     CreateProcessingRequestService,
     ListOwnProcessingRequestsService,
+    GetOwnProcessingRequestService,
     catalogClientProvider,
   ],
 })
