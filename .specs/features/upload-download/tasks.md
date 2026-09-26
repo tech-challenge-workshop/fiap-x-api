@@ -184,12 +184,18 @@ T9
 - Skill: NONE
 
 **Done when**:
-- [ ] Composition e2e: boot fails naming each missing variable; with them set the bound adapter is `S3UploadStorage`
-- [ ] Existing e2e suites updated to set storage variables and override the provider (listed; no assertion weakened)
-- [ ] Build gate passes
+- [x] Composition e2e: boot fails naming each missing variable; with them set the bound adapter is `S3UploadStorage`
+- [x] Existing e2e suites updated to set storage variables and override the provider (listed; no assertion weakened)
+- [x] Build gate passes
 
 **Tests**: e2e
 **Gate**: build
+
+**Status**: ✅ Complete. `test/storage-composition.e2e-spec.ts` adds 6 tests (e2e 68 → 74, 0 skipped). `StorageModule` exports `STORAGE_CONFIG` and `UPLOAD_STORAGE`; `AppModule` imports it. The new helper `test/support/test-storage.ts` (`TestStorageEnv`) sets and restores the storage variables.
+
+Existing suites changed, setup only, no assertion touched:
+- `app`, `auth`, `auth-outage`, `get-processing-request`, `list-processing-requests`, `processing-requests`: set the storage variables and override `UPLOAD_STORAGE` with `InMemoryUploadStorage`.
+- `auth-composition`: sets the storage variables only. It boots through `NestFactory` and cannot override; building the S3 clients opens no connection.
 
 ---
 

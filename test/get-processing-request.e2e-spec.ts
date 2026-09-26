@@ -5,11 +5,15 @@ import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { CATALOG_CLIENT } from './../src/processing-requests/services/create-processing-request.service';
 import { InMemoryCatalogClient } from './../src/processing-requests/adapters/in-memory-catalog-client.adapter';
+import { InMemoryUploadStorage } from './../src/storage/in-memory-upload-storage';
+import { UPLOAD_STORAGE } from './../src/storage/upload-storage.port';
 import { TestIdentityProvider } from './support/test-identity-provider';
+import { TestStorageEnv } from './support/test-storage';
 import { countCatalogCalls } from './support/catalog-calls';
 
 describe('GET /processing-requests/:id (e2e)', () => {
   const idp = new TestIdentityProvider();
+  const storageEnv = new TestStorageEnv();
   let app: INestApplication<App>;
   let catalogClient: InMemoryCatalogClient;
   let alice: string;
@@ -17,18 +21,23 @@ describe('GET /processing-requests/:id (e2e)', () => {
 
   beforeAll(async () => {
     await idp.start();
+    storageEnv.set();
     alice = await idp.token({ sub: 'alice' });
     bob = await idp.token({ sub: 'bob' });
   });
 
   afterAll(async () => {
+    storageEnv.restore();
     await idp.stop();
   });
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(UPLOAD_STORAGE)
+      .useValue(new InMemoryUploadStorage())
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(

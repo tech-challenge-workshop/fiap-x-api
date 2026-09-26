@@ -5,7 +5,10 @@ import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { CATALOG_CLIENT } from './../src/processing-requests/services/create-processing-request.service';
 import { InMemoryCatalogClient } from './../src/processing-requests/adapters/in-memory-catalog-client.adapter';
+import { InMemoryUploadStorage } from './../src/storage/in-memory-upload-storage';
+import { UPLOAD_STORAGE } from './../src/storage/upload-storage.port';
 import { TestIdentityProvider } from './support/test-identity-provider';
+import { TestStorageEnv } from './support/test-storage';
 import { createSigningKey, SigningKey } from './support/jwks-server';
 import { signToken } from './support/tokens';
 import { countCatalogCalls } from './support/catalog-calls';
@@ -17,23 +20,29 @@ import { countCatalogCalls } from './support/catalog-calls';
  */
 describe('Identity provider outage (e2e)', () => {
   const idp = new TestIdentityProvider();
+  const storageEnv = new TestStorageEnv();
   let newKey: SigningKey;
   let app: INestApplication<App>;
   let catalogClient: InMemoryCatalogClient;
 
   beforeAll(async () => {
     await idp.start();
+    storageEnv.set();
     newKey = await createSigningKey('rotated-in-key');
   });
 
   afterAll(async () => {
+    storageEnv.restore();
     await idp.stop();
   });
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(UPLOAD_STORAGE)
+      .useValue(new InMemoryUploadStorage())
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(

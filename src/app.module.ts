@@ -4,9 +4,10 @@ import { AppService } from './app.service';
 import { ProcessingRequestsModule } from './processing-requests/processing-requests.module';
 import { HealthController } from './health/health.controller';
 import { AuthModule } from './auth/auth.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
-  imports: [AuthModule, ProcessingRequestsModule],
+  imports: [AuthModule, StorageModule, ProcessingRequestsModule],
   controllers: [AppController, HealthController],
   providers: [AppService],
 })

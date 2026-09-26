@@ -4,15 +4,19 @@ import { INestApplication } from '@nestjs/common';
 import { AppModule } from './../src/app.module';
 import { JwtAuthGuard } from './../src/auth/jwt-auth.guard';
 import { TestIdentityProvider } from './support/test-identity-provider';
+import { TestStorageEnv } from './support/test-storage';
 
 describe('Authentication composition (e2e)', () => {
   const idp = new TestIdentityProvider();
+  const storageEnv = new TestStorageEnv();
 
   beforeEach(async () => {
     await idp.start();
+    storageEnv.set();
   });
 
   afterEach(async () => {
+    storageEnv.restore();
     await idp.stop();
   });
 
