@@ -168,6 +168,68 @@ describe('InMemoryCatalogClient', () => {
       expect((await adapter.listOwned('alice', 1, 20)).total).toBe(1);
     });
 
+    it("replays the owner's request for a known source under a new key, storing nothing and leaving the new key unbound (HARD-02)", async () => {
+      const first = await adapter.createProcessingRequest(
+        'alice',
+        'sources/alice/a.mp4',
+        'idem-1',
+      );
+
+      const second = await adapter.createProcessingRequest(
+        'alice',
+        'sources/alice/a.mp4',
+        'idem-2',
+      );
+
+      expect(first).toMatchObject({ outcome: 'created' });
+      expect(second).toStrictEqual({ ...first, outcome: 'replayed' });
+      expect((await adapter.listOwned('alice', 1, 20)).total).toBe(1);
+      // The second key was not bound: it still creates for another source.
+      await expect(
+        adapter.createProcessingRequest(
+          'alice',
+          'sources/alice/b.mp4',
+          'idem-2',
+        ),
+      ).resolves.toMatchObject({ outcome: 'created' });
+      expect((await adapter.listOwned('alice', 1, 20)).total).toBe(2);
+    });
+
+    it('checks the key first: a key bound to another source is a conflict even when the new source already has a request', async () => {
+      await adapter.createProcessingRequest(
+        'alice',
+        'sources/alice/a.mp4',
+        'idem-1',
+      );
+      await adapter.createProcessingRequest(
+        'alice',
+        'sources/alice/b.mp4',
+        'idem-2',
+      );
+
+      const res = await adapter.createProcessingRequest(
+        'alice',
+        'sources/alice/b.mp4',
+        'idem-1',
+      );
+
+      expect(res).toStrictEqual({ outcome: 'conflict' });
+      expect((await adapter.listOwned('alice', 1, 20)).total).toBe(2);
+    });
+
+    it("does not replay another owner's request for the same source", async () => {
+      await adapter.createProcessingRequest('alice', 'shared.mp4', 'idem-1');
+
+      const bobs = await adapter.createProcessingRequest(
+        'bob',
+        'shared.mp4',
+        'idem-2',
+      );
+
+      expect(bobs).toMatchObject({ outcome: 'created' });
+      expect((await adapter.listOwned('bob', 1, 20)).total).toBe(1);
+    });
+
     it('scopes the key per owner: the same key from two owners creates two requests', async () => {
       const alices = await adapter.createProcessingRequest(
         'alice',

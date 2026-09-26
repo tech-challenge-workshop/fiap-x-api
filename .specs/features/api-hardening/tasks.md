@@ -241,16 +241,32 @@ T10
 
 **Done when**:
 
-- [ ] Unit: known source + new key → `replayed` with the same id; known key + other source → `conflict` (unchanged)
-- [ ] E2e:
+- [x] Unit: known source + new key → `replayed` with the same id; known key + other source → `conflict` (unchanged)
+- [x] E2e:
   - K1 → `201`
   - K2 on the same upload → `200` with the same id, and the owner's total is unchanged
   - K2 on another upload → `201`
   - K1 and K2 concurrently on one upload → one request, and both responses carry its id
-- [ ] Full gate passes
+- [x] Full gate passes
 
 **Tests**: unit + e2e
 **Gate**: full
+
+**Status**: ✅ Complete. Unit 147 → 150, e2e 141 → 143, 0 skipped with `STORAGE_TEST_ENDPOINT` set.
+- `InMemoryCatalogClient.createProcessingRequest` follows the Catalog's verified contract. The key is checked first: the same source → `replayed`; another source → `conflict`. An unbound key for a source the owner already has → `replayed` with the stored record, and nothing is written. Otherwise → `created`.
+- `in-memory-catalog-client.adapter.spec.ts` adds 3 tests:
+  - A known source under a new key → the same record, `replayed`; the total stays 1, and the new key still creates for another source.
+  - A key bound to another source → `conflict`, even when the new source already has a request.
+  - Another owner's request for the same source is not replayed.
+- `test/complete-upload.e2e-spec.ts` adds a `one upload, one request (HARD-02)` group:
+  - K1 → `201`; K2 on the same upload → `200` with the same body, and the owner's total unchanged; K2 on another upload → `201` with a new id.
+  - K1 and K2 held at `complete` until both arrive → statuses `200` and `201`, one id, one request.
+- Existing tests changed: none.
+- Negatives (scratch copy, restored):
+  - Without the source check, the new unit test and both e2e tests fail.
+  - Checking the source before the key fails the conflict-first test.
+  - Ignoring the owner in the source check fails the owner test.
+  - Binding the new key on replay fails the unit replay test and both e2e tests.
 
 ---
 

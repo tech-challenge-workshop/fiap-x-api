@@ -159,6 +159,67 @@ describe('POST /uploads/:uploadId/complete (e2e)', () => {
     ]);
   });
 
+  describe('one upload, one request (HARD-02)', () => {
+    it('answers a second key on a confirmed upload with 200 and the same request, and that key still creates for another upload (AC P2.1-P2.3)', async () => {
+      const upload = await uploaded();
+      const first = await confirm(app, alice, upload.uploadId, 'key-1').expect(
+        201,
+      );
+      const total = (await catalog.listOwned('alice', 1, 100)).total;
+
+      const second = await confirm(app, alice, upload.uploadId, 'key-2').expect(
+        200,
+      );
+
+      expect(second.body).toEqual(first.body);
+      expect((await catalog.listOwned('alice', 1, 100)).total).toBe(total);
+      expect(await requestsOf('alice')).toEqual([
+        (first.body as ConfirmBody).processingRequestId,
+      ]);
+
+      const other = await uploaded();
+      const third = await confirm(app, alice, other.uploadId, 'key-2').expect(
+        201,
+      );
+
+      const thirdId = (third.body as ConfirmBody).processingRequestId;
+      expect(thirdId).not.toBe((first.body as ConfirmBody).processingRequestId);
+      expect(await requestsOf('alice')).toEqual([
+        thirdId,
+        (first.body as ConfirmBody).processingRequestId,
+      ]);
+    });
+
+    it('creates exactly one request when two keys confirm one upload concurrently, and both carry its id (edge case)', async () => {
+      const upload = await uploaded();
+      const complete = storage.complete.bind(storage);
+      let arrived = 0;
+      let release!: () => void;
+      const bothArrived = new Promise<void>((resolve) => (release = resolve));
+      jest.spyOn(storage, 'complete').mockImplementation(async (...args) => {
+        arrived += 1;
+        if (arrived === 2) {
+          release();
+        }
+        await bothArrived;
+        return complete(...args);
+      });
+
+      const [a, b] = await Promise.all([
+        confirm(app, alice, upload.uploadId, 'key-1'),
+        confirm(app, alice, upload.uploadId, 'key-2'),
+      ]);
+
+      expect(arrived).toBe(2);
+      expect([a.status, b.status].sort()).toEqual([200, 201]);
+      const ids = [a, b].map(
+        (res) => (res.body as ConfirmBody).processingRequestId,
+      );
+      expect(ids[0]).toBe(ids[1]);
+      expect(await requestsOf('alice')).toEqual([ids[0]]);
+    });
+  });
+
   it.each<[string, string | null]>([
     ['missing', null],
     ['empty', ''],
