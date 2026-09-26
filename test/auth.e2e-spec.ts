@@ -101,6 +101,12 @@ describe('Authentication (e2e)', () => {
       'a valid token under a scheme other than Bearer (edge case)',
       async () => `Basic ${await idp.token()}`,
     ],
+    [
+      // A second representative of "any scheme other than Bearer", so a guard
+      // that only singles out Basic is still caught.
+      'a valid token under the Token scheme (edge case)',
+      async () => `Token ${await idp.token()}`,
+    ],
     ['Bearer with no token (AC P1.1)', () => Promise.resolve('Bearer ')],
     [
       'a tampered token (AC P1.2)',
@@ -130,6 +136,13 @@ describe('Authentication (e2e)', () => {
     [
       'a validly signed token without exp (edge case)',
       async () => `Bearer ${await idp.token({ exp: undefined })}`,
+    ],
+    [
+      // Without iat as well, so a rule that demands exp only when iat is
+      // present is still caught.
+      'a validly signed token without exp or iat (edge case)',
+      async () =>
+        `Bearer ${await idp.token({ exp: undefined, iat: undefined })}`,
     ],
   ])('responds 401 without calling the Catalog for %s', async (_, header) => {
     const res = await create(await header());

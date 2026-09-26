@@ -1,12 +1,17 @@
-# Auth and Owner Scope Validation — api
+# Auth and Owner Scope Validation — api (Round 2)
 
 **Date**: 2026-09-26
 **Spec**: `.specs/features/auth-owner-scope/spec.md` (AUTH-01..AUTH-09)
-**Diff range**: `f449e29..684aeae` on `feat/auth-owner-scope`. The implementation is 11 commits from `ca85522` to `684aeae`. `a59a7bb` is a spec-only commit that added T12.
-**Verifier**: independent sub-agent (author ≠ verifier)
-**Environment**: Node 22.22.3 on the host. The gates ran on a `git archive HEAD` copy under the scratchpad with the repo's `node_modules` symlinked. The real tree was clean at `684aeae`, so the copy matches it byte for byte. Docker was not used.
+**Diff range**: `f449e29..636f33a` on `feat/auth-owner-scope`. Round 2 re-verifies fix commit `636f33a` (T13, test-only). `git diff --stat 684aeae 636f33a` touches only `src/auth/signing-key-cache.spec.ts` (+17), `test/auth.e2e-spec.ts` (+6) and `.specs/*`. No production source changed since round 1.
+**Verifier**: independent sub-agent, round 2 (author ≠ verifier; this verifier wrote neither the code nor round 1)
+**Environment**: Node 22.22.3 on the host. The gates and the sensor ran on a fresh `git archive 636f33a` copy under the scratchpad (`s5api/base2`), with the repo's `node_modules` symlinked. `diff -rq` against the real tree (excluding `.git`, `node_modules`, `dist`) showed no differences. Round 1's `base/` copy was not reused; it differed from HEAD in exactly the two T13 test files. Docker and `fiap-x-platform` were not touched.
 
-**Result**: FAIL. All 15 acceptance criteria and all 5 edge cases have `file:line` evidence, and the build gate is green with 0 skipped. However, 2 of 31 behaviour-level mutants survived. A cheap probe proves each survivor changes observable behaviour that the spec pins, so both are real gaps. Both gaps are in the tests; the HEAD code behaves correctly on both probes.
+**Result**: FAIL. Both round-1 survivors are now killed, each by its new T13 test, and no round-1 kill regressed. The gate is green with 0 skipped. However, 5 of the 9 new round-2 mutants are real survivors:
+
+- The main one is G3 (Major): T13's "never expire" test only fakes `Date.now`, and only after the first fetch. An expiry measured with `performance.now()` or evicted by a timer survives, and so does a 48 h `Date.now` expiry.
+- G4 and G5 (Minor) are one-representative gaps in the non-Bearer and no-`exp` edge cases.
+
+A probe proves each real survivor changes observable behaviour that the spec pins, and shows HEAD behaves correctly. All gaps are in the tests; the code is correct.
 
 ---
 
@@ -14,173 +19,174 @@
 
 | Task | Status | Notes |
 | --- | --- | --- |
-| T1 `jose` + Jest transform | ✅ Done | `package.json:30` pins `"jose": "6.2.12"`; `test/jest-e2e.json:14` has the `transformIgnorePatterns` rule. The built `dist/main` loads `jose` at boot (see Gate). |
-| T2 OIDC config | ✅ Done | `ca85522` |
-| T3 signing-key cache | ✅ Done | `5d8be21` |
-| T4 token verifier | ✅ Done | `aab64b6` |
-| T5 global guard, `@Public`, `@Owner` | ✅ Done | `04b0f9f` |
-| T6 Catalog client reads | ✅ Done | `9183270` |
-| T7 projection | ✅ Done | `e79b6bc` |
-| T8 create as the token's owner | ✅ Done | `59b6b8c`. The rewritten tests that encoded the old owner-from-body contract were reviewed: `create-processing-request.dto.spec.ts`, `create-processing-request.service.spec.ts` and `test/processing-requests.e2e-spec.ts`. Each rewrite now asserts the new contract at equal or greater strength (for example `:57` `not.toContain('user-123')` was added). The orchestrator accepted these rewrites. |
-| T9 list | ✅ Done | `4128d67` |
-| T10 read one | ✅ Done | `46ffbc4` |
-| T11 outage e2e | ✅ Done | `269559d` |
-| T12 reject a token without `exp` | ✅ Done | `684aeae` |
+| T1–T12 | ✅ Done | Carried from round 1 (`validation.md` round 1, Task Completion). Production code is byte-identical to round 1's `684aeae`. |
+| T13 close the two round-1 test gaps | ✅ Done | `636f33a`. It adds `src/auth/signing-key-cache.spec.ts:56-71` (spies `Date.now` +24 h after an outage, asserts the key still resolves with `requestCount` 1) and `test/auth.e2e-spec.ts:98-103` (`Basic <valid token>` → 401, 0 Catalog calls). Its Done-when claims hold: M11b and M22 are now killed by exactly these tests (see Sensor). |
 
-The diff contains no `SPEC_DEVIATION` markers. `tasks.md` records two technical deviations, and both are acceptable:
-
-- T5 added `testPathIgnorePatterns` for `._*` files.
-- T9 made `CatalogErrorFilter` pass the exception's message through. As a result, the 400 names the parameter, and a Catalog failure answers `"Catalog unavailable"` on every route.
+The diff contains no `SPEC_DEVIATION` markers. T13 changed no production code, as `tasks.md` states.
 
 ---
 
-## Source checks (read directly, not inferred from tests)
+## Source checks (read directly at HEAD)
 
-- **The guard is the global `APP_GUARD`.** `src/auth/auth.module.ts:31` registers `{ provide: APP_GUARD, useClass: JwtAuthGuard }`, and `src/app.module.ts:9` imports `AuthModule`. The composition test at `test/auth-composition.e2e-spec.ts:43` asserts `expect(globalGuards).toEqual([JwtAuthGuard])`.
-- **Only `/health` is `@Public()`.** `grep -rn Public src` finds a single use, at `src/health/health.controller.ts:4`, where it is applied at class level. `AppController` (`GET /`) is not public and gets 401 without a token (`test/auth.e2e-spec.ts:160-161`). The guard reads the metadata from both the handler and the class (`src/auth/jwt-auth.guard.ts:37-40`).
-- **`TokenVerifier` returns only `sub` (AC P1.9).**
-  - `src/auth/token-verifier.ts:36` returns `{ sub: payload.sub }`. The guard stores only that value (`src/auth/jwt-auth.guard.ts:53` `request.owner = (...).sub`).
-  - In `src`, no code outside `token-verifier.ts:28,36` reads `payload`. Nothing in `src` calls `decodeJwt` or `decodeProtectedHeader`, and the token header is read only at `jwt-auth.guard.ts:46`.
-  - `issuer`, `audience`, `algorithms: ['RS256']` and `requiredClaims: ['exp', 'sub']` are passed to `jwtVerify` at `:21-27`.
-- **The projection is an allow-list.** `src/processing-requests/projection.ts:24-33` builds a new object from four named fields and adds `failureReason` only when `status === 'FAILED'`. Nothing is copied or deleted from the input.
-  - The list and get services both project: `list-own-processing-requests.service.ts:26` and `get-own-processing-request.service.ts:44`.
-  - Create returns only `{ processingRequestId, status }` (`create-processing-request.service.ts:21-26`).
-- **Fail-closed configuration.** `src/auth/oidc.config.ts:11-21` throws `"<NAME> is required"` for a missing or blank value. There is no default and no "auth off" path.
-- **No token logging.** The guard logs fixed strings plus `error.name` or `error.constructor.name` only (`jwt-auth.guard.ts:48,57,63`).
+`src/` is unchanged since round 1, so round 1's source checks carry over. Each cited line was re-read at `636f33a` and still holds:
+
+- The guard is the global `APP_GUARD` (`src/auth/auth.module.ts:31`). The composition assertion `expect(globalGuards).toEqual([JwtAuthGuard])` is at `test/auth-composition.e2e-spec.ts:43`.
+- `@Public()` is read from both the handler and the class (`src/auth/jwt-auth.guard.ts:37-40`). The scheme regex `BEARER = /^Bearer ([^\s]+)$/i` is at `jwt-auth.guard.ts:20` and is applied at `:46`.
+- The verifier passes `issuer`, `audience`, `algorithms: ['RS256']` and `requiredClaims: ['exp', 'sub']` (`src/auth/token-verifier.ts:21-27`) and returns only `{ sub }` (`:36`).
+- The key cache has no expiry: `if (this.keySet)` at `src/auth/signing-key-cache.ts:29`. It refetches only on `JWKSNoMatchingKey` (`:33`), shares the refetch (`:43`), and has a fetch timeout (`:52-54`).
+- The projection is an allow-list (`src/processing-requests/projection.ts:24-33`). The configuration fails closed (`src/auth/oidc.config.ts:11-21`).
 
 ---
 
 ## Spec-Anchored Acceptance Criteria
 
+Only AC P1.8 and the non-Bearer edge case changed with T13; they were re-derived from scratch. For every other row, the round-1 evidence was carried over and its `file:line`s were re-confirmed at HEAD. Line numbers in `test/auth.e2e-spec.ts` after line 97 shifted by +6 because of the new row, and numbers in `src/auth/signing-key-cache.spec.ts` after line 55 shifted by +17. They are updated below.
+
 ### P1: Only authenticated calls reach the system (AUTH-01..03)
 
 | Criterion | Spec-defined outcome | `file:line` + assertion | Result |
 | --- | --- | --- | --- |
-| AC1 no Bearer token | 401, Catalog not called | `test/auth.e2e-spec.ts:93,98` (no header; `Bearer ` with no token) → `:131` `expect(res.status).toBe(401)`, `:132` `toEqual({ statusCode: 401, message: 'Unauthorized' })`, `:133` `expect(catalogCalls()).toBe(0)` (POST). GET list `test/list-processing-requests.e2e-spec.ts:216-219`; GET by id `test/get-processing-request.e2e-spec.ts:124-127` | ✅ PASS |
-| AC2 bad signature | 401, no Catalog | `test/auth.e2e-spec.ts:100-101` (tampered payload) and `:104-105` (key the provider does not publish), both through `:131-133`. Unit: `src/auth/token-verifier.spec.ts:95-97` `rejects.toBeInstanceOf(errors.JWSSignatureVerificationFailed)` | ✅ PASS |
-| AC3 expired | 401, no Catalog | `test/auth.e2e-spec.ts:108-109` (`exp: now-1`) through `:131-133`. Unit: `src/auth/token-verifier.spec.ts:75-77` `toBeInstanceOf(errors.JWTExpired)` | ✅ PASS |
-| AC4 wrong `iss` | 401, no Catalog | `test/auth.e2e-spec.ts:112-114` through `:131-133`. Unit: `token-verifier.spec.ts:83` `expect(await claimFailure(token)).toBe('iss')` | ✅ PASS |
-| AC5 `aud` lacks audience | 401, no Catalog | `test/auth.e2e-spec.ts:117-118` through `:131-133`. Unit: `token-verifier.spec.ts:89` `.toBe('aud')`. An `aud` array that includes the audience is accepted: `:65-67` | ✅ PASS |
-| AC6 no `sub` | 401, no Catalog | `test/auth.e2e-spec.ts:121-122` through `:131-133`. Unit: `token-verifier.spec.ts:132` `.toBe('sub')`; `:142-148` covers a `sub` of `42`, `''` or an object | ✅ PASS |
-| AC7 keys unfetchable, no cached match | 503, no Catalog | `test/auth.e2e-spec.ts:142` `toBe(503)`, `:143-146` exact body, `:147` `catalogCalls()` 0 (nothing cached). `test/auth-outage.e2e-spec.ts:83` `.expect(503)`, `:85-88` exact body, `:89` 0 calls (cache holds a different key). Unit: `src/auth/signing-key-cache.spec.ts:61-63,70-72` `toBeInstanceOf(IdentityProviderUnavailableError)` | ✅ PASS |
-| AC8 cached key keeps working while provider down | 200 | `test/auth-outage.e2e-spec.ts:73` `.expect(200)`, `:75-76` body and `toHaveBeenCalledWith('bob', 1, 20)`. Unit: `signing-key-cache.spec.ts:52-53` (resolves, `requestCount` 1). **See G1: not pinned over time.** | ✅ PASS (sensor gap G1) |
-| AC9 reads no claim other than `sub`/`iss`/`aud`/`exp` | only `sub` leaves the verifier | `src/auth/token-verifier.spec.ts:57-59` `resolves.toStrictEqual({ sub: 'alice' })` for a token carrying `email`, `preferred_username` and `realm_access.roles`. Structural check: `token-verifier.ts:36` | ✅ PASS (spec-precision note SP1) |
-| AC10 `/health` without a token | 200 | `test/auth.e2e-spec.ts:155-157` `.expect(200).expect({ status: 'ok' })` | ✅ PASS |
+| AC1 no Bearer token | 401, Catalog not called | `test/auth.e2e-spec.ts:93` (no header) and `:104` (`Bearer ` with no token), both through `:137` `expect(res.status).toBe(401)`, `:138` `toEqual({ statusCode: 401, message: 'Unauthorized' })` and `:139` `expect(catalogCalls()).toBe(0)`. GET list: `test/list-processing-requests.e2e-spec.ts:216-219`. GET by id: `test/get-processing-request.e2e-spec.ts:124-127`. | ✅ PASS |
+| AC2 bad signature | 401, no Catalog | `test/auth.e2e-spec.ts:106-107` (tampered) and `:110-111` (unpublished key), through `:137-139`. Unit: `src/auth/token-verifier.spec.ts:95-97` `toBeInstanceOf(errors.JWSSignatureVerificationFailed)`. | ✅ PASS |
+| AC3 expired | 401, no Catalog | `test/auth.e2e-spec.ts:114-115`, through `:137-139`. Unit: `src/auth/token-verifier.spec.ts:75-77` `toBeInstanceOf(errors.JWTExpired)`. | ✅ PASS |
+| AC4 wrong `iss` | 401, no Catalog | `test/auth.e2e-spec.ts:118-120`, through `:137-139`. Unit: `src/auth/token-verifier.spec.ts:83` `.toBe('iss')`. | ✅ PASS |
+| AC5 `aud` lacks audience | 401, no Catalog | `test/auth.e2e-spec.ts:123-124`, through `:137-139`. Unit: `src/auth/token-verifier.spec.ts:89` `.toBe('aud')`. The array case is at `:65-67`. | ✅ PASS |
+| AC6 no `sub` | 401, no Catalog | `test/auth.e2e-spec.ts:127-128`, through `:137-139`. Unit: `src/auth/token-verifier.spec.ts:132` and `:142-148`. | ✅ PASS |
+| AC7 keys unfetchable, no cached match | 503, no Catalog | `test/auth.e2e-spec.ts:148` `toBe(503)`, `:149-152` exact body, `:153` 0 calls. `test/auth-outage.e2e-spec.ts:83` `.expect(503)`, `:85-88` body, `:89` 0 calls. Unit: `src/auth/signing-key-cache.spec.ts:78-80` and `:87-89` `toBeInstanceOf(IdentityProviderUnavailableError)`. | ✅ PASS |
+| **AC8 cached key keeps working while the provider is unreachable (re-derived)** | Accepted for as long as the outage lasts. The spec is unbounded ("WHILE ... SHALL keep accepting"), and `design.md` makes "no time-based expiry" the mechanism. | Immediate: `test/auth-outage.e2e-spec.ts:73` `.expect(200)`, `:75-76`, and `src/auth/signing-key-cache.spec.ts:52-53`. **Over time (T13):** `src/auth/signing-key-cache.spec.ts:61` `jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 24h)`, `:66` `expect(await modulusOf(key)).toBe(keyA.publicJwk.n)`, `:67` `expect(server.requestCount).toBe(1)`. This kills M11b. However, the time travel covers only `Date.now`, is installed after the first fetch, and spans 24 h, so M31, M32 and M33 survive (**G3**). | ⚠️ Evidence present, sensor gap G3 |
+| AC9 no claim beyond `sub`/`iss`/`aud`/`exp` | only `sub` leaves the verifier | `src/auth/token-verifier.spec.ts:57-59` `resolves.toStrictEqual({ sub: 'alice' })`. The structural check is at `token-verifier.ts:36`. | ✅ PASS (SP1, carried) |
+| AC10 `/health` without a token | 200 | `test/auth.e2e-spec.ts:160-163` `.expect(200).expect({ status: 'ok' })`. The non-public `/` route gets 401 at `:166-167`. | ✅ PASS |
 
-### P2: Requests are owned by the authenticated user (AUTH-04)
+### P2–P4 (AUTH-04..09)
 
-| Criterion | Spec-defined outcome | `file:line` + assertion | Result |
-| --- | --- | --- | --- |
-| AC1 owner = token `sub` | Catalog gets `sub` as `ownerUserId` | `test/processing-requests.e2e-spec.ts:82` `expect(createSpy).toHaveBeenCalledWith('alice', 'videos/clip.mp4')`; `:88-91` the request is listed under `alice`. Unit: `create-processing-request.service.spec.ts` asserts `'alice'` reaches the client | ✅ PASS |
-| AC2 body `ownerUserId` ignored | `sub` still used; request not rejected | `test/processing-requests.e2e-spec.ts:79` sends `ownerUserId: 'bob'`, `:80` `.expect(201)`, `:82` gets `'alice'`, `:92` `listOwned('bob')` `total` `toBe(0)`. Without the field: `:63-70` → 201 | ✅ PASS |
-| AC3 201 with id + status, no `sourceStorageKey` | exact shape | `test/processing-requests.e2e-spec.ts:84-87` `toEqual({ processingRequestId: expect.any(String), status: 'RECEIVED' })`. The in-memory client returns the whole record (`in-memory-catalog-client.adapter.ts:49`), so the API's own projection is what is tested | ✅ PASS |
+These are carried unchanged from round 1. The test files involved were not modified by T13. Each cited line was re-read at HEAD and still holds, for example:
 
-### P3: A user lists their own requests (AUTH-05..07, AUTH-09)
+- `test/processing-requests.e2e-spec.ts:79-92`: body `ownerUserId: 'bob'` → `toHaveBeenCalledWith('alice', ...)`, an exact `{processingRequestId, status}` body, and `bob`'s `total` 0.
+- `test/list-processing-requests.e2e-spec.ts:92-94,102-103,128,136,188-189,203-208`.
+- `test/get-processing-request.e2e-spec.ts:66,88-104,111-116`.
+- `src/processing-requests/projection.spec.ts:26-30,38`.
 
-| Criterion | Spec-defined outcome | `file:line` + assertion | Result |
-| --- | --- | --- | --- |
-| AC1 only the caller's | items ⊆ owner | `test/list-processing-requests.e2e-spec.ts:92` `toEqual([a3, a2, a1])`, `:94` `toEqual([b2, b1])`, `:102-103` `toHaveBeenNthCalledWith(1, 'alice', 1, 20)` / `(2, 'bob', 1, 20)` | ✅ PASS |
-| AC2 newest first | `createdAt` desc | `:92` `[a3, a2, a1]`, `:94` `[b2, b1]`. The order comes from the Catalog, which the catalog validation verifies; the API passes it through | ✅ PASS |
-| AC3 defaults `page=1`, `pageSize=20` | 1 / 20 | `:93` `toMatchObject({ page: 1, pageSize: 20, total: 3 })`, `:102` Catalog asked with `1, 20` | ✅ PASS |
-| AC4 body `{items,page,pageSize,total}` | exact keys, `total` is the caller's count | `:96-101` keys `['items','page','pageSize','total']`, `:93`/`:95` `total` 3 / 2; `:113-118` explicit paging `toEqual({... page: 2, pageSize: 2, total: 3 })` | ✅ PASS |
-| AC5 item fields; `failureReason` iff FAILED | exact keys | e2e `:145-150` keys exactly `createdAt, processingRequestId, status, updatedAt` (RECEIVED). Unit `src/processing-requests/projection.spec.ts:26-30` `toStrictEqual({...base, status: 'FAILED', failureReason})`; `:38` `toStrictEqual({ ...base, status })` for RECEIVED/QUEUED/PROCESSING/COMPLETED | ✅ PASS (SP2) |
-| AC6 never `sourceStorageKey`/`zipStorageKey`/`failureCode`/`attemptId`/`ownerUserId` | absent in any response | list `test/list-processing-requests.e2e-spec.ts:158-167` `expect(res.text).not.toContain(...)`. By id: `test/get-processing-request.e2e-spec.ts:69-74` exact keys, `:81` no storage-key value. Create: `test/processing-requests.e2e-spec.ts:84-87`. Unit: `projection.spec.ts:26,38-44` with every forbidden field plus `someFutureField` in the input | ✅ PASS |
-| AC7 bad `page` → 400 naming it, no Catalog | 400 + `page` message | `test/list-processing-requests.e2e-spec.ts:171-176` (`0`, `-1`, `abc`, `1.5`, empty, repeated) → `:188` `toEqual({ statusCode: 400, message: ['page must be an integer greater than or equal to 1'] })`, `:189` `catalogCalls()` 0 | ✅ PASS |
-| AC8 bad `pageSize` → 400 naming it, no Catalog | 400 + `pageSize` message | `:177-180` (`0`, `101`, `abc`, and both at once) → `:188-189`; bounds 1 and 100 accepted at `:194-197` | ✅ PASS |
-| AC9 beyond last page | `items: []`, true total | `:128` `toEqual({ items: [], page: 5, pageSize: 1, total: 2 })` | ✅ PASS |
-| AC10 Catalog failure → 502 | 502 | `:203` `.expect(502)`, `:205-208` `{ statusCode: 502, message: 'Catalog unavailable' }`. Adapter: `src/processing-requests/adapters/http-catalog-client.adapter.spec.ts:164-176` (500, 404, non-JSON, wrong shape) → `CatalogUnavailableError` | ✅ PASS |
+| Story | ACs | Result |
+| --- | --- | --- |
+| P2 owner from token | AC1–AC3 | ✅ PASS (evidence as in round 1) |
+| P3 list | AC1–AC10 | ✅ PASS (SP2, carried) |
+| P4 read one | AC1–AC4 | ✅ PASS |
 
-### P4: A user reads one of their requests (AUTH-08, AUTH-09)
-
-| Criterion | Spec-defined outcome | `file:line` + assertion | Result |
-| --- | --- | --- | --- |
-| AC1 owner → 200 with the P3 AC5 shape | 200, exact item | `test/get-processing-request.e2e-spec.ts:66` `.expect(200)`, `:69-74` exact keys, `:75` id, `:76` `RECEIVED` | ✅ PASS |
-| AC2 another user → same 404 as missing | byte-identical 404 | `:88` `.expect(404)`, `:95-98` `toEqual({ statusCode: 404, message: 'Processing request not found' })`, `:99` `expect(randomUuid.text).toBe(otherUsers.text)`, `:101-103` same content type; `:104` the Catalog is asked under `'bob'` | ✅ PASS |
-| AC3 unknown or malformed id → 404 | 404 | `:89-93` random UUID and `not-a-uuid` → 404, `:99-100` same text. In the real Catalog a non-UUID id is a 404 (`processing-catalog/src/interface/owned-processing-requests.controller.ts:66-67`), which `HttpCatalogClient` maps to `undefined` (`http-catalog-client.adapter.ts:65-67`) | ✅ PASS |
-| AC4 Catalog failure → 502 | 502 | `:111` `.expect(502)`, `:113-116` exact body | ✅ PASS |
-
-**Status**: ✅ All 15 ACs have evidence, and every asserted value matches the spec outcome. There are 2 spec-precision notes, neither blocking.
+**Status**: 15/15 ACs have `file:line` evidence whose asserted values match the spec outcome. AC P1.8's evidence is not yet discriminating over time (G3).
 
 ---
 
 ## Edge Cases
 
-- [x] **A user with no requests** gets `items: []`, `total: 0` and 200: `test/list-processing-requests.e2e-spec.ts:134` `.expect(200)`, `:136` `toEqual({ items: [], page: 1, pageSize: 20, total: 0 })`.
-- [x] **A non-Bearer scheme** gets 401: `test/auth.e2e-spec.ts:95-96` (`Basic YWxpY2U6c2VjcmV0`) through `:131-133`. **This is weak (G2):** the credential is not a JWT, so it gets 401 whatever the scheme. A mutant accepting any scheme survives.
-- [x] **A token without `exp`** gets 401: `test/auth.e2e-spec.ts:125-126` through `:131-133`. Unit: `src/auth/token-verifier.spec.ts:137` `expect(decodeJwt(token)).not.toHaveProperty('exp')`, `:139` `.toBe('exp')`.
-- [x] **A rotated-out key** triggers one refetch, then 401 if the key is still absent.
-  - Unit: `src/auth/signing-key-cache.spec.ts:94-97` `toBeInstanceOf(errors.JWKSNoMatchingKey)` with `requestCount` `toBe(2)`; `:105-112` a rotated key is picked up and the rotated-out one is refused.
-  - e2e: `test/auth.e2e-spec.ts:104-105` gives 401 for an unpublished key.
-- [x] **The token is never logged**: `test/auth.e2e-spec.ts:171-179` checks that `logs` does not contain the signature, payload or header of two rejected tokens, and that it does contain the error class.
-
-HEAD was also probed with 12 malformed tokens, none of them a test in the suite: `...`, 2 segments, 4 segments, a non-JSON header, no `alg`, no `kid`, a non-JSON payload, an array payload, HS256 or ES256 with the RSA `kid`, a numeric `kid`, and an unknown `crit`. All 12 got 401; none got a 500.
+- [x] **No requests** → `items: []`, `total: 0` and 200: `test/list-processing-requests.e2e-spec.ts:134,136`. Carried.
+- [x] **Non-Bearer scheme → 401 (re-derived).**
+  - `test/auth.e2e-spec.ts:95-96` sends `Basic YWxpY2U6c2VjcmV0`, which is not discriminating.
+  - **New in T13:** `:98-103` sends `` `Basic ${await idp.token()}` `` (a valid token), through `:137` 401, `:138` the exact body and `:139` 0 Catalog calls.
+  - This kills M22.
+  - Only one scheme (`Basic`) carries a valid token, so a deny-list that refuses `Basic` and accepts anything else (M38) survives (**G4**). Probe: `Token <valid JWT>` gets 401 at HEAD and 200 under M38.
+- [x] **Token without `exp` → 401.**
+  - e2e: `test/auth.e2e-spec.ts:131-132`, through `:137-139`.
+  - Unit: `src/auth/token-verifier.spec.ts:137-139`.
+  - Both tokens still carry `iat` (the `test/support/tokens.ts:20` default), so "`exp` required only when `iat` is present" (M36) survives (**G5**). Probe: a token with neither `exp` nor `iat` gets 401 at HEAD and 200 under M36.
+- [x] **Rotated-out key** → one refetch, then 401: `src/auth/signing-key-cache.spec.ts:111-114` (`JWKSNoMatchingKey`, `requestCount` 2) and `:122-129`. e2e: `test/auth.e2e-spec.ts:110-111`.
+- [x] **Token never logged**: `test/auth.e2e-spec.ts:170-185`.
 
 ---
 
 ## Discrimination Sensor
 
 **Method**
-- Each mutant ran in a fresh `rsync` copy of the HEAD archive under the scratchpad, without `dist`, with `node_modules` symlinked.
-- The Python applier exits non-zero unless every anchor matches exactly once, so no mutant ran unapplied.
-- Every mutant passed `tsc --noEmit` (exit 0), so every kill comes from behaviour, not from a compile error.
-- For each mutant, `jest` (unit) and `jest --config test/jest-e2e.json` both ran in full.
+- Each mutant ran in a fresh `rsync` copy of `base2` (the HEAD archive), without `dist`, with `node_modules` symlinked. The mutants ran three at a time, and each copy was deleted afterwards.
+- The Python applier (`apply2.py` over `mutants_r2.py`, which imports round 1's `mutants.py` unchanged) exits non-zero unless every anchor matches exactly once, so no mutant ran unapplied.
+- Every mutant passed `tsc --noEmit` (exit 0), so every kill is behavioural.
+- For each mutant, the full unit suite (82) and the full e2e suite (52) both ran.
+- Failing test names were extracted from the Jest JSON reports.
 
-| # | File | Mutation | Unit failed | E2E failed | Killed? |
+### Round-1 set re-run at HEAD (31 mutants)
+
+| # | Mutation | Unit failed | E2E failed | Killed? |
+| --- | --- | --- | --- | --- |
+| M01 | global `APP_GUARD` removed | 0 | 25 | ✅ |
+| M02 | controller `@Public()` | 0 | 23 | ✅ |
+| M03 | `issuer` dropped | 1 | 1 | ✅ |
+| M04 | `audience` dropped | 1 | 1 | ✅ |
+| M05 | `algorithms` removed | 2 | 0 | ✅ |
+| M06 | `HS256` allowed | 1 | 0 | ✅ |
+| M07 | `exp` not required | 1 | 1 | ✅ |
+| M08 | missing / non-string `sub` accepted | 3 | 1 | ✅ |
+| M09 | IdP unavailable → 401 | 0 | 3 | ✅ |
+| M10 | every error → 503 | 0 | 8 | ✅ |
+| M11 | 1 ms cache expiry | 1 | 1 | ✅ (the unit kill is new, from T13) |
+| **M11b** | **10 min `Date.now` cache expiry** | **1** | 0 | ✅ **Killed** by `src/auth/signing-key-cache.spec.ts:56` "keeps resolving a cached kid a day later while the provider is down, because cached keys never expire (AC P1.8)". This is the only failing test. |
+| M12 | no refetch on an unknown `kid` | 5 | 2 | ✅ |
+| M13 | refetch not shared | 1 | 0 | ✅ |
+| M14 | owner from the body | 0 | 2 | ✅ |
+| M15 | projection as a delete-list | 5 | 0 | ✅ |
+| M16 | `failureReason` on non-FAILED | 4 | 0 | ✅ |
+| M17 | 404 names the id | 0 | 1 | ✅ |
+| M18 | `pageSize` clamped | 0 | 4 | ✅ |
+| M19 | Catalog called before validation | 0 | 11 | ✅ |
+| M20 | token logged | 0 | 1 | ✅ |
+| M21 | issuer defaulted | 2 | 1 | ✅ |
+| **M22** | **any `Authorization` scheme** | 0 | **1** | ✅ **Killed** by `test/auth.e2e-spec.ts:101` "responds 401 without calling the Catalog for a valid token under a scheme other than Bearer (edge case)". This is the only failing test. |
+| M23 | `total` = page length | 0 | 2 | ✅ |
+| M24 | Catalog 404 → 502 | 1 | 0 | ✅ |
+| M25 | owner not URL-encoded | 2 | 0 | ✅ |
+| M26 | no fetch timeout | 1 | 0 | ✅ |
+| M27 | `@Public` read from the handler only | 0 | 1 | ✅ |
+| M28 | 1 h clock tolerance | 1 | 1 | ✅ |
+| M29 | get returns the raw item | 0 | 1 | ✅ |
+| M30 | default `pageSize` 10 | 0 | 4 | ✅ |
+
+All 31 are killed. No round-1 kill became a survivor, and every mutant's fail count is equal to or higher than in round 1.
+
+### New in round 2 (9 mutants)
+
+| # | File | Mutation | Unit | E2E | Killed? |
 | --- | --- | --- | --- | --- | --- |
-| M01 | `src/auth/auth.module.ts:31` | global `APP_GUARD` registration removed | 0 | 24 | ✅ |
-| M02 | `src/processing-requests/controllers/processing-requests.controller.ts:21` | controller marked `@Public()` | 0 | 22 | ✅ |
-| M03 | `src/auth/token-verifier.ts:22` | `issuer` option dropped | 1 | 1 | ✅ |
-| M04 | `src/auth/token-verifier.ts:23` | `audience` option dropped | 1 | 1 | ✅ |
-| M05 | `src/auth/token-verifier.ts:24` | `algorithms` removed | 2 | 0 | ✅ |
-| M06 | `src/auth/token-verifier.ts:24` | `HS256` allowed | 1 | 0 | ✅ |
-| M07 | `src/auth/token-verifier.ts:26` | `requiredClaims` `exp` dropped | 1 | 1 | ✅ |
-| M08 | `src/auth/token-verifier.ts:26,28` | missing / non-string `sub` accepted | 3 | 1 | ✅ |
-| M09 | `src/auth/jwt-auth.guard.ts:58` | `IdentityProviderUnavailableError` → 401 | 0 | 3 | ✅ |
-| M10 | `src/auth/jwt-auth.guard.ts:56` | every error → 503 | 0 | 8 | ✅ |
-| M11 | `src/auth/signing-key-cache.ts:29` | key cache with a 1 ms expiry (refetch; outage → 503) | 0 | 1 | ✅ |
-| **M11b** | `src/auth/signing-key-cache.ts:29` | **key cache with a realistic 10 min expiry** | 0 | 0 | ❌ **Survived: real gap G1** |
-| M12 | `src/auth/signing-key-cache.ts:33` | no refetch on an unknown `kid` once a set is cached | 5 | 2 | ✅ |
-| M13 | `src/auth/signing-key-cache.ts:43` | refetch without sharing the in-flight promise | 1 | 0 | ✅ |
-| M14 | `src/processing-requests/controllers/processing-requests.controller.ts:35` | create uses the body's `ownerUserId` | 0 | 2 | ✅ |
-| M15 | `src/processing-requests/projection.ts:24` | projection turned into a delete-list | 5 | 0 | ✅ |
-| M16 | `src/processing-requests/projection.ts:30` | `failureReason` for non-FAILED items | 4 | 0 | ✅ |
-| M17 | `src/processing-requests/services/get-own-processing-request.service.ts:42` | 404 body includes the id (differs per id) | 0 | 1 | ✅ |
-| M18 | `src/processing-requests/dtos/list-query.dto.ts:34` | `pageSize` clamped to 1..100 instead of 400 | 0 | 4 | ✅ |
-| M19 | `src/processing-requests/controllers/processing-requests.controller.ts:39-43` | Catalog called before the query is validated (validation moved into the handler) | 0 | 11 | ✅ |
-| M20 | `src/auth/jwt-auth.guard.ts:63` | token appended to the rejection log | 0 | 1 | ✅ |
-| M21 | `src/auth/oidc.config.ts:19` | a missing issuer defaults to `http://localhost:8080/realms/fiapx` | 2 | 1 | ✅ |
-| **M22** | `src/auth/jwt-auth.guard.ts:20` | **any `Authorization` scheme accepted (`/^\S+ (\S+)$/`)** | 0 | 0 | ❌ **Survived: real gap G2** |
-| M23 | `src/processing-requests/services/list-own-processing-requests.service.ts:29` | `total` = items on the page | 0 | 2 | ✅ |
-| M24 | `src/processing-requests/adapters/http-catalog-client.adapter.ts:65` | Catalog 404 on `getOwned` → 502 | 1 | 0 | ✅ |
-| M25 | `src/processing-requests/adapters/http-catalog-client.adapter.ts:75` | owner not URL-encoded | 2 | 0 | ✅ |
-| M26 | `src/auth/signing-key-cache.ts:52-54` | key-set fetch has no timeout | 1 | 0 | ✅ |
-| M27 | `src/auth/jwt-auth.guard.ts:37-40` | `@Public` read from the handler only | 0 | 1 | ✅ |
-| M28 | `src/auth/token-verifier.ts:24` | 1 h `clockTolerance` | 1 | 1 | ✅ |
-| M29 | `src/processing-requests/services/get-own-processing-request.service.ts:44` | get returns the raw Catalog item | 0 | 1 | ✅ |
-| M30 | `src/processing-requests/dtos/list-query.dto.ts:36` | default `pageSize` 10 | 0 | 4 | ✅ |
+| M31 | `src/auth/signing-key-cache.ts:29` | 48 h `Date.now` expiry (beyond T13's 24 h) | 0 | 0 | ❌ Survived: **real (G3)** |
+| M32 | `src/auth/signing-key-cache.ts:29` | 10 min expiry measured with `performance.now()` | 0 | 0 | ❌ Survived: **real (G3)** |
+| M33 | `src/auth/signing-key-cache.ts:62` | cached set evicted by a 10 min `setTimeout(...).unref()` | 0 | 0 | ❌ Survived: **real (G3)** |
+| M34 | `src/auth/jwt-auth.guard.ts:20` | scheme matched case-sensitively (the `i` flag dropped, so `bearer` and `BEARER` are refused) | 0 | 0 | ❌ Survived: equivalent w.r.t. spec (SP3) |
+| M35 | `src/auth/jwt-auth.guard.ts:46` | exactly lowercase `bearer ` refused | 0 | 0 | ❌ Survived: equivalent w.r.t. spec (SP3) |
+| M36 | `src/auth/token-verifier.ts:26,36` | `exp` required only when `iat` is present | 0 | 0 | ❌ Survived: **real (G5)** |
+| M37 | `src/auth/signing-key-cache.ts:29` | 10 min expiry with a stale-if-error fallback (refetch; keep the old set on failure) | 0 | 0 | ❌ Survived: equivalent |
+| M38 | `src/auth/jwt-auth.guard.ts:20` | scheme deny-list `/^(?!Basic )\S+ (\S+)$/i` (anything but `Basic` accepted) | 0 | 0 | ❌ Survived: **real (G4)** |
+| M39 | `src/auth/oidc.config.ts:27` | `OIDC_JWKS_TIMEOUT_MS=0` accepted | 1 | 0 | ✅ |
 
-### Survivor classification
+**Harness note**: the first M35 was written as `/^(?!bearer )Bearer .../i`. Because of the `i` flag, the lookahead also refused `Bearer`, and 33 e2e tests failed. That was a broken mutant, not a kill. It was replaced by the check at `:46` shown above (`raw.startsWith('bearer ')`), and only the replacement is counted.
 
-- **M11b is a real gap (G1).** AC P1.8 is unbounded ("WHILE the provider is unreachable ... SHALL keep accepting"). The design makes "no time-based expiry" the mechanism behind it (`design.md` SigningKeyCache notes). Every outage test stops the provider immediately after the first fetch, so any expiry longer than the test's few milliseconds passes.
-  - Probe, run in scratch: authenticate once, stop the provider, advance `Date.now` by 11 minutes, send a fresh token signed by the cached key.
-  - HEAD returns **200**; M11b returns **503**. A test that controls the clock kills the mutant.
-- **M22 is a real gap (G2).** The spec edge case is "a scheme other than Bearer → 401", but the only test sends `Basic YWxpY2U6c2VjcmV0`, which is not a JWT. It would get 401 from the verifier whatever the scheme.
-  - Probe, run in scratch: `Authorization: Basic <valid JWT>`.
-  - HEAD returns **401**; M22 returns **200**.
+### Survivor classification (each confirmed by a probe in scratch, HEAD vs mutant)
 
-Neither survivor is equivalent, and neither depends on the harness: each has an input that tells it apart from HEAD, and HEAD handles that input correctly. The weakness is only in the tests.
+The probes live in `s5api/probe-r2.spec.ts` and `s5api/probe-r2.e2e-spec.ts`, and they were run against HEAD and each survivor. HEAD passed every probe.
 
-**Sensor depth**: P0 (authentication and authorization). 31 behaviour-level mutants covered:
-- every `jwtVerify` option;
-- the 401/503 mapping;
-- the key cache's expiry, refetch, sharing and timeout;
-- the guard's registration, `@Public` scope, scheme and logging;
-- owner-from-body, the projection, the 404 oracle, pagination validation and ordering against the Catalog call;
-- the adapter's 404 and URL encoding;
-- configuration defaults.
+| Probe | HEAD | Distinguishes |
+| --- | --- | --- |
+| `Date.now` spied +49 h after an outage, cached `kid` | resolves, 1 fetch | M31 (and M11b) fail; M32, M33 and M37 pass |
+| fake timers installed **after** the first fetch, +400 days | resolves | M31 and M32 fail; M33 passes, because its real timer was scheduled before the fakes were installed |
+| fake timers (`jest.useFakeTimers({ doNotFake: ['nextTick','setImmediate','queueMicrotask'] })`) installed **before** the first fetch, +400 days | resolves, 1 fetch | M11b, M31, M32 and M33 all fail (`IdentityProviderUnavailableError`); M37 passes |
+| `Authorization: bearer <valid>` | 200 | M34 and M35 → 401 |
+| `Authorization: BEARER <valid>` | 200 | M34 → 401 |
+| `Authorization: Token <valid>` | 401 | M38 → 200 |
+| token with neither `exp` nor `iat` | 401 | M36 → 200 |
 
-**Isolation**: the real tree's `git status --porcelain` was empty before and after, and the two are identical. No `git stash` was used, and the real tree was never edited.
-**Sensor outcome**: 29/31 killed; 2 survived (real 2, equivalent 0, harness-only 0).
+- **M31, M32, M33 are real (G3).** AC P1.8 has no time bound, and HEAD resolves the key after 400 days. Each mutant stops accepting a cached-key token once its expiry passes during an outage.
+  - T13's test at `src/auth/signing-key-cache.spec.ts:61` spies only `Date.now`, installs the spy after the first fetch, and advances 24 h. That kills a `Date.now` expiry under 24 h, but nothing measured with another clock or a timer.
+  - A timer-based eviction (M33) is a common way to write a TTL cache.
+  - On the question put to this round: M31 on its own (48 h) is a real gap against AC P1.8's unbounded wording, but a minor one. A 24 h horizon is already past typical key-set TTLs, and no finite horizon kills every finite TTL.
+  - Rolled together, the fix is cheap, and it kills M31, M32, M33 and M11b at once (see Fix 3).
+- **M36 is real (G5).** The spec edge case says "IF the token has no `exp` claim THEN 401", without condition. Both no-`exp` tests keep the default `iat` (`test/support/tokens.ts:20`). The mutant is not a very plausible bug, but the fix is one row.
+- **M38 is real (G4).** The spec says "a scheme other than `Bearer` → 401". T13 exercises only `Basic` with a valid token, so a deny-list implementation passes.
+- **M34 and M35 are equivalent w.r.t. the spec (SP3).** Both change observable behaviour (`bearer`/`BEARER` get 401), but the spec never says whether scheme matching is case-sensitive.
+  - RFC 7235 §2.1 / RFC 6750 treat the scheme as case-insensitive, so HEAD's `/i` is the RFC-correct choice.
+  - The spec's "a scheme other than `Bearer`" does not decide whether `bearer` is "other". Pin it in the spec (Fix 5), not as a blocking test gap.
+- **M37 is equivalent.** Stale-if-error keeps accepting cached keys while the provider is down, so AC P1.8 holds. A periodic refetch while the provider is up is not forbidden by any AC.
+
+**Sensor depth**: P0 (authentication and authorization). There were 40 behaviour-level mutants: the 31 from round 1 and 9 new ones, aimed at T13's two tests (clock source, horizon, scheme set, scheme case), the `exp` rule's conditionality, and the timeout configuration.
+
+**Isolation**: `git status --porcelain` on the real tree was empty before the run (recorded to `scratchpad/porcelain-before-r2.txt`) and empty after. No `git stash` was used, the real tree was never edited, and the gates and `build` ran only in the scratch copy.
+
+**Sensor outcome**: 32/40 killed. Of the 8 survivors, 5 are real (M31, M32, M33, M36, M38), 3 are equivalent (M34, M35, M37), and 0 are harness-only.
 
 ---
 
@@ -188,75 +194,83 @@ Neither survivor is equivalent, and neither depends on the harness: each has an 
 
 | Principle | Status |
 | --- | --- |
-| Minimum code / surgical / no scope creep | ✅ New code is confined to `src/auth/*` (7 files) and the processing-requests slice. The old `create-processing-request.controller.ts` was replaced, not duplicated. |
-| Matches patterns | ✅ Port/adapter kept, the in-memory double was extended, the error → HTTP mapping is in the same style as creation |
-| Spec-anchored outcome check | ✅ Exact status codes, exact 401/503/404/400/502 bodies, exact 400 messages, `toStrictEqual` shapes, and the Catalog call count asserted as 0 |
-| Per-layer coverage expectation | ✅ Unit tests for config, key cache (real HTTP key-set server), verifier (real RS256 tokens), adapters and projection. e2e tests through `AppModule` for every route, every 401 cause, 503, outage and composition. |
-| Every test maps to a requirement | ✅ Spot-checked all new suites. Extra tests, such as alg `none`, `aud` arrays, bounds and error-status key sets, map to Done-when items in `tasks.md`. |
-| Documented guidelines followed | none found; strong defaults applied (as `tasks.md` states) |
+| Minimum code / surgical / no scope creep | ✅ T13 is test-only: +17 lines in one unit spec and +6 in one e2e spec. It changes no production code. |
+| Matches patterns | ✅ It reuses the `newCache`, `header`, `modulusOf` and `it.each` row patterns. The `Date.now` spy is restored in `finally`. |
+| Spec-anchored outcome check | ✅ The new assertions are exact: the key modulus, `requestCount` 1, 401, the exact body, and 0 Catalog calls. |
+| Per-layer coverage expectation | ⚠️ Met, but AC P1.8's over-time evidence depends on one clock source (G3). |
+| Every test maps to a requirement | ✅ Both new tests name their AC or edge case in the title. |
+| Documented guidelines followed | none found; strong defaults applied (carried) |
 
 ---
 
 ## Gate Check
 
-- **Gate command**: `npm run lint && npm run typecheck && npm test -- --json --outputFile=<scratch>/unit.json && npm run test:e2e -- --json --outputFile=<scratch>/e2e.json && npm run build`
+- **Gate command**: `npm run lint && npm run typecheck && npm test -- --json --outputFile=<scratch>/r2-unit.json && npm run test:e2e -- --json --outputFile=<scratch>/r2-e2e.json && npm run build`, run in the HEAD archive copy.
 - **Outcome**: exit 0.
-  - Lint and typecheck: 0 errors each.
-  - Unit: 81 of 81 passed, in 10 suites, with 0 pending and 0 todo.
-  - e2e: 51 of 51 passed, in 7 suites, with 0 pending and 0 todo according to the JSON report.
+  - Lint (`--max-warnings 0`) and typecheck: clean.
+  - Unit: 82 of 82 passed, in 10 suites, with 0 pending, 0 todo and 0 runtime-error suites.
+  - e2e: 52 of 52 passed, in 7 suites, with 0 pending, 0 todo and 0 runtime-error suites.
   - Build: exit 0.
-- **Boot without OIDC**: `node dist/main` with `OIDC_ISSUER`, `OIDC_AUDIENCE` and `OIDC_JWKS_URL` unset exits **1** with `Error: OIDC_ISSUER is required`. With only `OIDC_ISSUER` unset it also exits 1 with the same message. With all three set, it logs `Nest application successfully started` and keeps running until the watchdog kills it, so `jose` loads from the built output.
-- **Before** (`f449e29`, run in a `git archive` scratch copy): 18 unit + 6 e2e = 24. **After**: 81 + 51 = 132. **Delta**: +108.
-  - The T8 rewrites of three pre-existing tests change contract, not strength: `rejects missing ownerUserId` became `accepts a body without ownerUserId`, and the 400 for a missing owner became a 201.
-  - Neither suite lost a test.
-- **Skipped**: none
+- **Skipped**: none. `grep` for `.skip`, `xit(`, `xdescribe`, `.todo` and `.only` in `src` and `test` finds nothing.
+- **Test count**: 18 + 6 = 24 before the feature (`f449e29`, from round 1). Round 1 had 81 + 51 = 132. Round 2 has 82 + 52 = **134** (+2, the two T13 tests). No test was removed or weakened.
+- **Boot without OIDC**: carried from round 1. `src/` is byte-identical since `684aeae`, so `dist/main` behaviour is unchanged.
 
 ---
 
 ## Spec-precision gaps
 
-1. **SP1: AC P1.9 "SHALL read no claim other than `sub`, `iss`, `aud`, `exp`".**
-   - `jose.jwtVerify` also validates `nbf` and the type of `iat` whenever they are present, and it honours the `crit` and `b64` headers.
-   - That goes beyond the literal wording, though only in the restrictive direction. It also matches the AC's stated intent: no proprietary claims (`docs/foudation.md`, AD-005).
-   - The spec does not say whether standard registered claims that the library validates count as "read". Non-blocking.
-2. **SP2: AC P3.5 "`failureReason` if and only if `status` is `FAILED`".**
-   - `projection.ts:30` requires both `status === 'FAILED'` and `failureReason !== undefined`, so a FAILED item without a reason would carry no `failureReason`.
-   - The Catalog always sets the reason for FAILED (catalog validation, SP1 there), so this cannot happen today.
-   - The spec is silent on this case. Non-blocking.
+1. **SP1** (AC P1.9: the standard claims `jose` validates) is carried, and non-blocking.
+2. **SP2** (AC P3.5: a FAILED item without a reason) is carried, and non-blocking.
+3. **SP3 (new): auth-scheme case.**
+   - The edge case "a scheme other than `Bearer` → 401" does not say whether `bearer` or `BEARER` counts as "other".
+   - HEAD accepts them (`jwt-auth.guard.ts:20` `/i`), which is RFC 7235-conformant. No test pins either behaviour, which is why M34 and M35 survive.
+   - Non-blocking. Pin it in `spec.md` (Fix 5).
 
 ---
 
 ## Fix Plans
 
-### Fix 1 (G1): pin "cached keys never expire" over time. Priority: Major, since it is the test for a P0 availability AC.
+### Fix 3 (G3): prove "cached keys never expire" with all clocks faked from the start. Priority: Major (a P0 availability AC; the T13 test covers only `Date.now`-based expiry).
 
-- **Root cause**: `src/auth/signing-key-cache.spec.ts:45-54` and `test/auth-outage.e2e-spec.ts:69-77` stop the provider immediately after the first fetch. No test lets time pass during the outage.
-- **Fix task**: in `signing-key-cache.spec.ts`:
-  1. Resolve `key-a`, then stop the server.
-  2. Advance the clock well past any plausible TTL, for example `jest.spyOn(Date, 'now')` or fake timers by 24 h.
-  3. Assert `keyFor(header('key-a'))` still resolves to key A, with `requestCount` still 1.
-- **Verify**: M11b (`Date.now() - fetchedAt < 600_000` guard in `keyFor`) must fail the new test, and HEAD must pass it. The verifier's probe did exactly this in e2e.
+- **Root cause**:
+  - `src/auth/signing-key-cache.spec.ts:60-61` spies only `Date.now`.
+  - It installs the spy after the first `keyFor`, so any timer scheduled at fetch time runs on the real clock.
+  - It advances only 24 h.
+- **Fix task**: add (or convert the T13 test to) this form:
+  1. `jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask'] })` **before** `newCache()` and the first `keyFor`.
+  2. Stop the server.
+  3. `jest.advanceTimersByTime(400 * 24 * 60 * 60 * 1000)`.
+  4. Assert that `keyFor(header('key-a'))` resolves to key A and `requestCount` is still 1.
+  5. Call `jest.useRealTimers()` in `finally` or `afterEach`.
+- **Verify**:
+  - The verifier's probe `PROBE-faketimers-early-400d` is exactly this test. It passes on HEAD and fails on M11b, M31, M32 and M33.
+  - The real HTTP key-set server and `AbortSignal.timeout` still work under these fake timers, since the probe's first fetch succeeded.
 
-### Fix 2 (G2): make the non-Bearer edge case discriminating. Priority: Minor. HEAD is correct; only the test is weak.
+### Fix 4 (G4): the non-Bearer edge with more than one scheme. Priority: Minor.
 
-- **Root cause**: `test/auth.e2e-spec.ts:95-96` uses a non-JWT credential, so the verifier rejects it whatever the scheme check does.
-- **Fix task**: add a row that sends a **valid** token under another scheme, for example `` `Basic ${await idp.token()}` `` and/or `` `Token ${await idp.token()}` ``. Assert 401, the `Unauthorized` body and 0 Catalog calls.
-- **Verify**: M22 (`BEARER = /^\S+ ([^\s]+)$/i`) must fail it, and HEAD must pass it.
+- **Root cause**: `test/auth.e2e-spec.ts:98-103` uses only `Basic <valid>`.
+- **Fix task**: add one row, `` `Token ${await idp.token()}` `` (or any scheme other than `Basic`), through the same 401, exact-body and 0-Catalog-call assertions.
+- **Verify**: M38 fails it, and HEAD passes (probe `PROBE-token-scheme`).
 
-### Non-blocking notes
+### Fix 5 (G5): the no-`exp` edge without `iat`. Priority: Minor.
 
-- **Unknown-`kid` refetch has no rate limit.** Every request carrying an unknown `kid` causes one key-set fetch; concurrent requests share one. The design accepts this (`design.md` "refetch only on an unknown kid"), and it is within spec. A caller can use it to generate load on the identity provider. Consider a short negative cache in a later slice.
-- **Pin SP1 and SP2 in `spec.md` wording.** Minor.
+- **Root cause**: `test/auth.e2e-spec.ts:131-132` and `src/auth/token-verifier.spec.ts:136` sign a token that keeps the default `iat`.
+- **Fix task**: add a row, `idp.token({ exp: undefined, iat: undefined })` → 401 (e2e), and/or a unit case with `claimFailure(...)` `toBe('exp')`.
+- **Verify**: M36 fails it, and HEAD passes (probe `PROBE-no-exp-no-iat`).
+
+### Fix 6 (SP3, spec wording, non-blocking)
+
+- State in `spec.md` that the scheme is matched case-insensitively, per RFC 7235.
+- Optionally add a `bearer <valid>` → 2xx row, which would kill M34 and M35.
 
 ---
 
 ## Requirement Traceability Update
 
-AUTH-01 to AUTH-09 are functionally met at HEAD. The two gaps are in the tests, not the code:
-
-- AUTH-03 (AC P1.8) stays at **Implementing** until Fix 1 lands.
-- AUTH-01 (the non-Bearer edge case) stays at **Implementing** until Fix 2 lands.
-- The others (AUTH-02, AUTH-04 to AUTH-09) are ready to move to ✅ Verified on the re-verify pass.
+- **AUTH-01** (the non-Bearer edge) stays at **Implementing** until Fix 4 lands. Its round-1 gap G2 is closed.
+- **AUTH-02** (the no-`exp` edge) stays at **Implementing** until Fix 5 lands.
+- **AUTH-03** (AC P1.8) stays at **Implementing** until Fix 3 lands. Its round-1 gap G1 is closed only for `Date.now` expiry under 24 h.
+- AUTH-04 to AUTH-09 are ready for ✅ Verified.
 
 The Verifier does not edit `spec.md`.
 
@@ -264,20 +278,18 @@ The Verifier does not edit `spec.md`.
 
 ## Summary
 
-**Overall**: ❌ Not Ready. The code is correct and the gaps are in the tests; two small fix tasks are needed.
+**Overall**: ❌ Not Ready. The code is correct at HEAD; the tests still miss some faults.
 
-- **Spec-anchored check**: 15/15 ACs and 5/5 edge cases have evidence; 2 spec-precision notes (non-blocking).
-- **Sensor**: 29/31 killed; 2 real-gap survivors (M11b, M22).
-- **Gate**: 132 passed (81 unit + 51 e2e), 0 skipped; lint, typecheck and build are clean. The built app refuses to boot without the OIDC variables (exit 1).
+- **Spec-anchored check**: 15/15 ACs and 5/5 edge cases have `file:line` evidence. There are 3 spec-precision notes (SP1 and SP2 carried, SP3 new), none of them blocking.
+- **Sensor**: 32/40 killed.
+  - M11b and M22 are now killed, by the T13 unit test and e2e row respectively.
+  - 0 regressions among the round-1 kills.
+  - 5 real survivors: M31, M32 and M33 (G3), M36 (G5) and M38 (G4).
+  - 3 equivalent: M34, M35 and M37.
+- **Gate**: 134 passed (82 unit + 52 e2e), 0 failed, 0 skipped; lint, typecheck and build are clean.
 
-**What works**:
-- The guard is global and fails closed, and only `/health` is public.
-- Every `jwtVerify` option is pinned by a test: `iss`, `aud`, RS256-only, required `exp` and `sub`, and zero clock tolerance.
-- The 401/503 split holds through the running app, including a real provider outage.
-- The owner always comes from `sub`.
-- The projection is an allow-list.
-- The 404 is byte-identical for a foreign, unknown or malformed id.
-- Pagination errors are exact 400s, with no Catalog call.
-- No token material is logged.
+**What works**: everything round 1 listed, plus these two T13 results:
+- A `Date.now` expiry under 24 h is now caught.
+- A valid token under `Basic` is now refused, under test.
 
-**Next steps**: route Fix 1 and Fix 2 to an implementer as test-only changes, then re-verify. This was fix→re-verify iteration 1 of 3.
+**Next steps**: route Fix 3 (Major), Fix 4 and Fix 5 (Minor), all test-only, to an implementer, then re-verify. This was fix→re-verify iteration 2 of 3. If the orchestrator declares this the final verifier round, carry G3, G4, G5 and SP3 as open items under "Validar depois".

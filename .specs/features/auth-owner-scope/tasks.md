@@ -66,6 +66,7 @@ T8
 T11
 T12
 T13
+T14
 ```
 
 ---
@@ -420,10 +421,33 @@ T13
 
 ---
 
+### T14: Close the gaps the second Verifier run found (fix round 2)
+
+**What**: Test-only fixes: fake every clock source before the first fetch and advance 400 days (AC P1.8); add a second non-Bearer scheme (`Token`); add a token without `exp` and without `iat`. Spec precision: the auth scheme is matched case-insensitively.
+**Where**: `src/auth/signing-key-cache.spec.ts`, `test/auth.e2e-spec.ts`
+**Depends on**: None
+**Reuses**: The Verifier's probe for G3 and its mutant harness (`scratchpad/s5api/apply2.py`, `mutants_r2.py`)
+**Requirement**: AUTH-01, AUTH-02, AUTH-03
+
+**Why**: Added by the orchestrator from the second Verifier run (FAIL, 32 of 40 mutants killed; code correct, tests too narrow). Survivors: M31 (48 h expiry), M32 (`performance.now()` expiry), M33 (`setTimeout` eviction), M36 (`exp` required only with `iat`), M38 (any scheme but `Basic` accepted).
+
+**Done when**:
+- [x] The P1.8 unit test installs fake timers (all but `nextTick`, `setImmediate`, `queueMicrotask`) before the first fetch, advances 400 days, and still resolves the cached key with one fetch
+- [x] e2e rows for `Token <valid>` and for a token with neither `exp` nor `iat`, each 401 with the Catalog not called
+- [x] Verified with the Verifier's harness on a copy of HEAD plus these tests: M31, M32, M33 each fail the P1.8 unit test; M36 and M38 each fail their new e2e row; the unmutated copy passes (38 unit in `src/auth`, 18 in `test/auth.e2e`)
+- [x] The spec states that the scheme is matched case-insensitively (RFC 7235), which is the existing behaviour
+- [x] Build gate passes
+
+**Tests**: e2e
+**Gate**: build
+**Status**: ✅ Complete. Test-only; no source change.
+
+---
+
 ## Phase Execution Map
 
 ```
-Phase 1 (T1 T2 T3 T4 T5) then Phase 2 (T6 T7 T8 T9 T10) then Phase 3 (T11 T12 T13)
+Phase 1 (T1 T2 T3 T4 T5) then Phase 2 (T6 T7 T8 T9 T10) then Phase 3 (T11 T12 T13 T14)
 ```
 
 11 tasks pack into two batches at ~7 per worker, cutting on phase boundaries: **Phase 1** (5) and **Phases 2 + 3** (6). Cross-repository order for S5: `processing-catalog` first (this repository's `HttpCatalogClient` calls its new routes), then this repository, then `fiap-x-platform`.
@@ -447,6 +471,7 @@ Phase 1 (T1 T2 T3 T4 T5) then Phase 2 (T6 T7 T8 T9 T10) then Phase 3 (T11 T12 T1
 | T11: Outage e2e | 1 test file | ✅ Granular |
 | T12: Require `exp` | 1 option on the verifier | ✅ Granular |
 | T13: Verifier test gaps | 2 test cases | ✅ Granular |
+| T14: Verifier test gaps (round 2) | 3 test cases + 1 spec sentence | ✅ Granular |
 
 ---
 
@@ -467,6 +492,7 @@ Phase 1 (T1 T2 T3 T4 T5) then Phase 2 (T6 T7 T8 T9 T10) then Phase 3 (T11 T12 T1
 | T11 | None | — | ✅ Match |
 | T12 | None | — | ✅ Match |
 | T13 | None | — | ✅ Match |
+| T14 | None | — | ✅ Match |
 
 No task depends on a later phase. Phase 2 and 3 tasks rely on Phase 1 having completed (the guard provides `@Owner()`), which phase ordering guarantees.
 
@@ -489,5 +515,6 @@ No task depends on a later phase. Phase 2 and 3 tasks rely on Phase 1 having com
 | T11 | Guard + module wiring | e2e | e2e | ✅ OK |
 | T12 | Auth primitives + guard | e2e | e2e | ✅ OK |
 | T13 | Auth primitives + guard (tests) | e2e | e2e | ✅ OK |
+| T14 | Auth primitives + guard (tests) | e2e | e2e | ✅ OK |
 
 T1 is the only `Tests: none`, on a layer the matrix marks `none`; its correctness is proved by T3's first test importing `jose` under Jest and by the build gate loading the built module.

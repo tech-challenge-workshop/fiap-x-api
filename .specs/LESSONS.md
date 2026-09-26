@@ -38,6 +38,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: M22 src/auth/jwt-auth.guard.ts:20; test/auth.e2e-spec.ts:95-96
 - last seen: 2026-09-26T04:08:33Z
 
+### L-005 - When faking time, install fake timers before the code under test reads a clock or schedules a timer, and fake every clock source, not only Date.now
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · harmful: 0
+- features: auth-owner-scope
+- evidence: M33 src/auth/signing-key-cache.ts:62; src/auth/signing-key-cache.spec.ts:61
+- last seen: 2026-09-26T04:21:10Z
+
+### L-006 - Cover a rule stated over a whole class of inputs with at least two representatives that differ in the other dimensions
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · harmful: 0
+- features: auth-owner-scope
+- evidence: M38 src/auth/jwt-auth.guard.ts:20; test/auth.e2e-spec.ts:98-103
+- last seen: 2026-09-26T04:21:10Z
+
+### L-007 - State in the spec whether protocol tokens such as auth schemes match case-sensitively
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · harmful: 0
+- features: auth-owner-scope
+- evidence: spec.md edge case non-Bearer; src/auth/jwt-auth.guard.ts:20
+- last seen: 2026-09-26T04:21:10Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
