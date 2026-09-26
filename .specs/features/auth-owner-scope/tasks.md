@@ -297,13 +297,19 @@ T12
 - Skill: NONE
 
 **Done when**:
-- [ ] e2e: `alice`'s and `bob`'s lists disjoint; defaults applied; `{ items, page, pageSize, total }`; page beyond the end → `items: []` with the true `total`; a user with none → `total: 0`
-- [ ] `page=0`, `page=abc`, `pageSize=0`, `pageSize=101` → 400 naming the parameter and range, Catalog not called
-- [ ] No forbidden field in any item; Catalog failure → 502
-- [ ] Full gate passes
+- [x] e2e: `alice`'s and `bob`'s lists disjoint; defaults applied; `{ items, page, pageSize, total }`; page beyond the end → `items: []` with the true `total`; a user with none → `total: 0`
+- [x] `page=0`, `page=abc`, `pageSize=0`, `pageSize=101` → 400 naming the parameter and range, Catalog not called
+- [x] No forbidden field in any item; Catalog failure → 502
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
+**Status**: ✅ Complete. 18 new e2e tests in `test/list-processing-requests.e2e-spec.ts` (e2e 25 → 43), unit unchanged at 80.
+- Requests are created over HTTP with `alice`'s and `bob`'s tokens. `:92-95` each list holds only the caller's ids, newest first, with `total` equal to their count; `:102-103` the Catalog is asked with the defaults `(owner, 1, 20)`. `:113` explicit paging, `:128` beyond the end → `items: []` with the true `total`, `:136` a user with none → `{ items: [], page: 1, pageSize: 20, total: 0 }`.
+- `:145` an item's keys are exactly `createdAt`, `processingRequestId`, `status`, `updatedAt`, although the in-memory Catalog returns `ownerUserId` and `sourceStorageKey` too; `:166` none of the forbidden names nor the storage key appears in the body.
+- `:188-189` ten invalid queries (0, negative, `abc`, `1.5`, empty, repeated, 101, both at once) → `{ statusCode: 400, message: [<exact Catalog wording>] }` with zero Catalog calls. `:205` → 502, `:218-219` no token → 401 with zero Catalog calls.
+- `ListQueryDto` converts only digit strings and checks the range in one constraint, so each invalid parameter yields exactly one message, worded as the Catalog words it.
+- Deviation: `CatalogErrorFilter` now takes the message from the exception's response body for every status. Before, a validation `400` on these routes answered `message: "Bad Request Exception"`, hiding which parameter failed (AC P3.7, P3.8). The `502` branch is gone, so a Catalog failure answers `message: "Catalog unavailable"` on every route; it used to say `"Catalog rejected creation"`, which is wrong for a read. The 401 and 503 bodies are unchanged.
 
 ---
 
