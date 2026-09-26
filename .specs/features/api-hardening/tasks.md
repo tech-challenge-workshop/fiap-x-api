@@ -360,13 +360,22 @@ T10
 
 **Done when**:
 
-- [ ] Both forms get `200` on `GET /processing-requests`
-- [ ] Near-miss: `Bearer` with no token → `401`
-- [ ] Dropping the `i` flag of `BEARER` turns a test red
-- [ ] Full gate passes
+- [x] Both forms get `200` on `GET /processing-requests`
+- [x] Near-miss: `Bearer` with no token → `401`
+- [x] Dropping the `i` flag of `BEARER` turns a test red
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
+
+**Status**: ✅ Complete. E2e 148 → 151, unit 150 unchanged, 0 skipped with `STORAGE_TEST_ENDPOINT` set.
+- `test/auth.e2e-spec.ts`:
+  - `bearer <token>` and `BEARER <token>` → `200`, the empty page and one Catalog call.
+  - A new row in the `401` table: the header `Bearer` alone → `401 Unauthorized`, no Catalog call. The existing `'Bearer '` row has a trailing space, so it is a different input.
+- Existing tests changed: none (one row added to the `401` table).
+- Negatives (scratch copy, restored):
+  - Dropping the `i` flag fails both new `200` cases.
+  - A pattern that lets `Bearer` through with an empty token still gives `401`, because verifying `''` throws a JOSE error; only the log line differs. That mutant is equivalent for the spec's outcome.
 
 ---
 
