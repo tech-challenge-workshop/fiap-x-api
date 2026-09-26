@@ -147,7 +147,7 @@ Decisions from the gray-area discussion of 2026-09-26 are in `fiap-x-platform/.s
 | UPL-01 | P1: Start an upload | Execute | Implementing |
 | UPL-02 | P1: Start an upload | Tasks | In Tasks |
 | UPL-03 | P2: Confirm an upload, exactly once | Execute | Implementing |
-| UPL-04 | P2: Confirm an upload, exactly once | Tasks | In Tasks |
+| UPL-04 | P2: Confirm an upload, exactly once | Execute | Implementing |
 | UPL-05 | P2: Confirm an upload, exactly once | Tasks | In Tasks |
 | UPL-06 | P2: Confirm an upload, exactly once | Tasks | In Tasks |
 | UPL-07 | P3: Download my ZIP | Execute | Implementing |
