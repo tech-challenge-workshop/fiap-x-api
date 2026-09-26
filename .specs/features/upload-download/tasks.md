@@ -127,11 +127,15 @@ T9
 - Skill: NONE
 
 **Done when**:
-- [ ] Double's behaviour matches the spike table row by row (listed in the tests)
-- [ ] Quick gate passes; at least 8 new tests
+- [x] Double's behaviour matches the spike table row by row (listed in the tests)
+- [x] Quick gate passes; at least 8 new tests
 
 **Tests**: unit
 **Gate**: quick
+
+**Status**: ✅ Complete. 14 new unit tests in `src/storage/in-memory-upload-storage.spec.ts` (unit 104 → 118). Two deviations from design.md:
+- The double lives at `src/storage/in-memory-upload-storage.ts`, not `test/support/`. The unit Jest config has `rootDir: src`, so its spec would never run from `test/support`; `InMemoryCatalogClient` sits in `src/` for the same reason.
+- `listParts` returns `UploadedPart[] | 'gone'`. A concurrent confirmation can complete the upload between `findInProgress` and `listParts`. Without `'gone'` the loser would answer 502 instead of carrying the request id (P2 AC 9).
 
 ---
 
