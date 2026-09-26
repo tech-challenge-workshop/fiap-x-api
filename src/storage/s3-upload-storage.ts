@@ -1,4 +1,5 @@
 import {
+  AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
   CreateMultipartUploadCommand,
   DeleteObjectCommand,
@@ -169,7 +170,7 @@ export class S3UploadStorage implements UploadStorage {
     key: string,
     storageUploadId: string,
     parts: UploadedPart[],
-  ): Promise<'completed' | 'gone'> {
+  ): Promise<'completed' | 'gone' | 'rejected'> {
     try {
       await this.client.send(
         new CompleteMultipartUploadCommand({
@@ -188,6 +189,26 @@ export class S3UploadStorage implements UploadStorage {
     } catch (error) {
       if (isNoSuchUpload(error)) {
         return 'gone';
+      }
+      if (isRejectedParts(error)) {
+        return 'rejected';
+      }
+      throw unavailable(error);
+    }
+  }
+
+  async abortMultipart(key: string, storageUploadId: string): Promise<void> {
+    try {
+      await this.client.send(
+        new AbortMultipartUploadCommand({
+          Bucket: this.bucket,
+          Key: key,
+          UploadId: storageUploadId,
+        }),
+      );
+    } catch (error) {
+      if (isNoSuchUpload(error)) {
+        return;
       }
       throw unavailable(error);
     }
@@ -271,6 +292,21 @@ function isNoSuchUpload(error: unknown): boolean {
   const candidate = error as { name?: string; Code?: string };
   return (
     candidate?.name === 'NoSuchUpload' || candidate?.Code === 'NoSuchUpload'
+  );
+}
+
+/** Storage refused the completion because of the parts the client sent. */
+const REJECTED_PARTS = new Set([
+  'EntityTooSmall',
+  'InvalidPart',
+  'InvalidPartOrder',
+]);
+
+function isRejectedParts(error: unknown): boolean {
+  const candidate = error as { name?: string; Code?: string };
+  return (
+    REJECTED_PARTS.has(candidate?.name ?? '') ||
+    REJECTED_PARTS.has(candidate?.Code ?? '')
   );
 }
 
