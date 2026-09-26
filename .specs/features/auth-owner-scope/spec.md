@@ -151,10 +151,10 @@ Decisions from the gray-area discussion of 2026-09-26 are in `fiap-x-platform/.s
 | AUTH-03 | P1: Only authenticated calls reach the system | Execute | Implementing |
 | AUTH-04 | P2: Requests are owned by the authenticated user | Execute | Implementing |
 | AUTH-05 | P3: A user lists their own requests | Execute | Implementing |
-| AUTH-06 | P3: A user lists their own requests | Tasks | In Tasks |
-| AUTH-07 | P3: A user lists their own requests | Tasks | In Tasks |
+| AUTH-06 | P3: A user lists their own requests | Execute | Implementing |
+| AUTH-07 | P3: A user lists their own requests | Execute | Implementing |
 | AUTH-08 | P4: A user reads one of their requests | Execute | Implementing |
-| AUTH-09 | P1–P4: responses never expose storage keys or internal codes | Tasks | In Tasks |
+| AUTH-09 | P1–P4: responses never expose storage keys or internal codes | Execute | Implementing |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
 

@@ -3,28 +3,25 @@ import {
   Catch,
   ArgumentsHost,
   HttpException,
-  HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
 
+/**
+ * Shapes every HTTP error on these routes as `{ statusCode, message }`. The
+ * message comes from the exception's response body, so validation errors
+ * keep the messages naming each invalid field.
+ */
 @Catch(HttpException)
 export class CatalogErrorFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
+    const response = host.switchToHttp().getResponse<Response>();
     const status = exception.getStatus();
+    const body = exception.getResponse();
+    const message: unknown =
+      typeof body === 'object' && body !== null && 'message' in body
+        ? body.message
+        : exception.message;
 
-    if (status === Number(HttpStatus.BAD_GATEWAY)) {
-      response.status(HttpStatus.BAD_GATEWAY).json({
-        statusCode: HttpStatus.BAD_GATEWAY,
-        message: 'Catalog rejected creation',
-      });
-      return;
-    }
-
-    response.status(status).json({
-      statusCode: status,
-      message: exception.message,
-    });
+    response.status(status).json({ statusCode: status, message });
   }
 }
