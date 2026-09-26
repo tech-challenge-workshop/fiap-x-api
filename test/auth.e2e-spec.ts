@@ -9,7 +9,10 @@ import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { CATALOG_CLIENT } from './../src/processing-requests/services/create-processing-request.service';
 import { InMemoryCatalogClient } from './../src/processing-requests/adapters/in-memory-catalog-client.adapter';
+import { InMemoryUploadStorage } from './../src/storage/in-memory-upload-storage';
+import { UPLOAD_STORAGE } from './../src/storage/upload-storage.port';
 import { TestIdentityProvider } from './support/test-identity-provider';
+import { TestStorageEnv } from './support/test-storage';
 import { createSigningKey, SigningKey } from './support/jwks-server';
 import { signToken, tamperPayload } from './support/tokens';
 import { countCatalogCalls } from './support/catalog-calls';
@@ -29,6 +32,7 @@ class CapturingLogger implements LoggerService {
 
 describe('Authentication (e2e)', () => {
   const idp = new TestIdentityProvider();
+  const storageEnv = new TestStorageEnv();
   let rogueKey: SigningKey;
   let app: INestApplication<App>;
   let catalogCalls: () => number;
@@ -42,17 +46,22 @@ describe('Authentication (e2e)', () => {
 
   beforeAll(async () => {
     await idp.start();
+    storageEnv.set();
     rogueKey = await createSigningKey('rogue-key');
   });
 
   afterAll(async () => {
+    storageEnv.restore();
     await idp.stop();
   });
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(UPLOAD_STORAGE)
+      .useValue(new InMemoryUploadStorage())
+      .compile();
 
     app = moduleFixture.createNestApplication();
     logger = new CapturingLogger();
