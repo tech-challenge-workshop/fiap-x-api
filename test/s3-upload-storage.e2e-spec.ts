@@ -3,6 +3,7 @@ import {
   DeleteObjectCommand,
   HeadObjectCommand,
   S3Client,
+  UploadPartCommand,
 } from '@aws-sdk/client-s3';
 import { randomUUID } from 'node:crypto';
 import { S3UploadStorage } from './../src/storage/s3-upload-storage';
@@ -350,6 +351,67 @@ function otherLoopback(url: string): string {
         'attachment; filename="frames-pr-1.zip"',
       );
       expect((await res.arrayBuffer()).byteLength).toBe(1000);
+    });
+
+    it('calls storage only through the internal endpoint and signs URLs only for the public one, which is unreachable (HARD-07)', async () => {
+      // Nothing listens on port 9: a call routed to the public endpoint
+      // fails, and a URL signed for the internal one names another host.
+      const routed = S3UploadStorage.fromConfig({
+        endpoint: internalEndpoint,
+        publicEndpoint: 'http://127.0.0.1:9',
+        bucket,
+        ...credentials,
+      });
+      const { key, prefix } = session();
+
+      const storageUploadId = await routed.startMultipart(
+        key,
+        'video/mp4',
+        1000,
+      );
+      const partUrl = await routed.presignPart(key, storageUploadId, 1, 3600);
+      expect(new URL(partUrl).host).toBe('127.0.0.1:9');
+      // The client's PUT, sent where the part URL cannot reach.
+      await raw.send(
+        new UploadPartCommand({
+          Bucket: bucket,
+          Key: key,
+          UploadId: storageUploadId,
+          PartNumber: 1,
+          Body: Buffer.alloc(1000, 7),
+        }),
+      );
+      await expect(routed.findInProgress(prefix)).resolves.toEqual({
+        key,
+        storageUploadId,
+      });
+      const parts = await routed.listParts(key, storageUploadId);
+      expect(parts).toEqual([
+        { partNumber: 1, etag: expect.any(String) as string, size: 1000 },
+      ]);
+      await expect(
+        routed.complete(key, storageUploadId, parts as UploadedPart[]),
+      ).resolves.toBe('completed');
+      await expect(routed.findObject(prefix)).resolves.toEqual({
+        key,
+        sizeBytes: 1000,
+        declaredSizeBytes: 1000,
+      });
+      const getUrl = await routed.presignGet(key, 300, 'frames-pr-1.zip');
+      expect(new URL(getUrl).host).toBe('127.0.0.1:9');
+      await routed.deleteObject(key);
+      await expect(routed.findObject(prefix)).resolves.toBeUndefined();
+
+      const aborted = session();
+      const abortedUploadId = await routed.startMultipart(
+        aborted.key,
+        'video/mp4',
+        1000,
+      );
+      await routed.abortMultipart(aborted.key, abortedUploadId);
+      await expect(
+        routed.findInProgress(aborted.prefix),
+      ).resolves.toBeUndefined();
     });
 
     it('turns a denied request into StorageUnavailableError, not absence', async () => {

@@ -179,11 +179,17 @@ T10
 
 **Done when**:
 
-- [ ] Swapping the two clients in the adapter turns this case red
-- [ ] Build gate passes
+- [x] Swapping the two clients in the adapter turns this case red
+- [x] Build gate passes
 
 **Tests**: integration
 **Gate**: build
+
+**Status**: ✅ Complete. E2e 135 → 136, unit 147 unchanged, 0 skipped with `STORAGE_TEST_ENDPOINT` set; lint, typecheck and build green.
+- `test/s3-upload-storage.e2e-spec.ts` adds one RustFS case: `S3UploadStorage` with the real internal endpoint and `http://127.0.0.1:9` as the public one. Start, `findInProgress`, `listParts`, `complete`, `findObject` (the head), `deleteObject` and `abortMultipart` succeed; the part URL and the GET URL name `127.0.0.1:9`.
+- The part is sent with the raw SDK client, since the part URL points where nothing listens.
+- Existing tests changed: none.
+- Negatives (scratch copy, restored): swapping the two clients in `fromConfig` fails the case with `StorageUnavailableError` on the first call; presigning on the internal endpoint fails it with host `127.0.0.1:39111` instead of `127.0.0.1:9`; calling on the public endpoint fails it with `StorageUnavailableError`.
 
 ---
 
