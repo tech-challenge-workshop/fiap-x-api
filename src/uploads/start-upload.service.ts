@@ -34,9 +34,10 @@ export class StartUploadService {
     // Taken before signing, so it never promises more than a URL lasts.
     const expiresAt = new Date(Date.now() + ttlSeconds * 1000).toISOString();
 
+    // Validated without case; stored in its canonical lowercase form.
     const storageUploadId = await this.storage.startMultipart(
       key,
-      dto.contentType,
+      dto.contentType.toLowerCase(),
       dto.sizeBytes,
     );
     const partNumbers = Array.from(

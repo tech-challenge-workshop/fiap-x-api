@@ -210,13 +210,19 @@ T10
 
 **Done when**:
 
-- [ ] `.mov` with `VIDEO/QuickTime` → `201`, and `.mp4` with `Video/MP4` → `201`
-- [ ] Storage receives the lowercase type: asserted on the double, and on RustFS through the head's `ContentType`
-- [ ] `video/mp4` for a `.mov` → `400` naming `contentType`; `video/mp4; codecs=avc1` → `400`
-- [ ] Full gate passes
+- [x] `.mov` with `VIDEO/QuickTime` → `201`, and `.mp4` with `Video/MP4` → `201`
+- [x] Storage receives the lowercase type: asserted on the double, and on RustFS through the head's `ContentType`
+- [x] `video/mp4` for a `.mov` → `400` naming `contentType`; `video/mp4; codecs=avc1` → `400`
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
+
+**Status**: ✅ Complete. E2e 136 → 141, unit 147 unchanged, 0 skipped with `STORAGE_TEST_ENDPOINT` set.
+- `test/start-upload.e2e-spec.ts` adds `.mov` + `VIDEO/QuickTime` and `.mp4` + `Video/MP4` → `201`, with `startMultipart` receiving `video/quicktime` and `video/mp4`. The double discards the type, so the argument is what it can show. The `400` table gains `VIDEO/MP4` for a `.mov` (a second mismatch representative) and `video/mp4; codecs=avc1`.
+- `test/s3-upload-storage.e2e-spec.ts` runs `StartUploadService` on the RustFS adapter with `VIDEO/QuickTime`, sends the part, completes, and reads `video/quicktime` from the head's `ContentType`. RustFS 1.0.0 keeps the case it is given (probed: `VIDEO/QuickTime` comes back unchanged), so the check discriminates.
+- Existing tests changed: none.
+- Negatives (scratch copy, restored): comparing without lowercasing fails the two `201` cases; passing the raw type to storage fails those two and the RustFS case; stripping parameters before comparing fails the `codecs=avc1` case.
 
 ---
 

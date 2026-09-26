@@ -21,8 +21,10 @@ export function videoExtensionOf(
 }
 
 /**
- * `contentType` must be the one its extension implies. When `fileName` is
- * itself invalid only that field is named, so any accepted type passes here.
+ * `contentType` must be the one its extension implies, ignoring case (media
+ * types are case-insensitive). The whole value is compared, so a type with
+ * parameters fails. When `fileName` is itself invalid only that field is
+ * named, so any accepted type passes here.
  */
 function matchesExtension(value: unknown, args: ValidationArguments): boolean {
   const extension = videoExtensionOf(
@@ -31,7 +33,7 @@ function matchesExtension(value: unknown, args: ValidationArguments): boolean {
   const accepted: readonly string[] = extension
     ? [CONTENT_TYPES[extension]]
     : Object.values(CONTENT_TYPES);
-  return typeof value === 'string' && accepted.includes(value);
+  return typeof value === 'string' && accepted.includes(value.toLowerCase());
 }
 
 /** One constraint per field, so an invalid field yields exactly one message. */

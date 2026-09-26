@@ -192,6 +192,28 @@ describe('POST /uploads (e2e)', () => {
     },
   );
 
+  it.each<[string, string, string, string]>([
+    ['clip.mov', 'VIDEO/QuickTime', 'video/quicktime', 'mov'],
+    ['clip.mp4', 'Video/MP4', 'video/mp4', 'mp4'],
+  ])(
+    'accepts %s with contentType %s and stores the object as %s (AC P3.1, P3.2)',
+    async (fileName, contentType, stored, extension) => {
+      const startSpy = jest.spyOn(storage, 'startMultipart');
+
+      const res = await start({ fileName, contentType, sizeBytes: 1 }).expect(
+        201,
+      );
+
+      const { uploadId } = res.body as StartBody;
+      expect(startSpy).toHaveBeenCalledTimes(1);
+      expect(startSpy).toHaveBeenCalledWith(
+        `sources/alice/${uploadId}.${extension}`,
+        stored,
+        1,
+      );
+    },
+  );
+
   it('accepts a fileName of exactly 255 characters', async () => {
     await start(video(1, `${'a'.repeat(251)}.mp4`)).expect(201);
   });
@@ -224,6 +246,20 @@ describe('POST /uploads (e2e)', () => {
     [
       '.mov with video/mp4',
       { fileName: 'clip.mov', contentType: 'video/mp4', sizeBytes: 1 },
+      CONTENT_TYPE_MESSAGE,
+    ],
+    [
+      '.mov with VIDEO/MP4 (AC P3.3)',
+      { fileName: 'clip.mov', contentType: 'VIDEO/MP4', sizeBytes: 1 },
+      CONTENT_TYPE_MESSAGE,
+    ],
+    [
+      '.mp4 with parameters after the type (AC P3.3)',
+      {
+        fileName: 'clip.mp4',
+        contentType: 'video/mp4; codecs=avc1',
+        sizeBytes: 1,
+      },
       CONTENT_TYPE_MESSAGE,
     ],
     [
