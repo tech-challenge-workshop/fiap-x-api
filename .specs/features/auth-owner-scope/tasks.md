@@ -244,12 +244,13 @@ T12
 - Skill: NONE
 
 **Done when**:
-- [ ] Given an item carrying every forbidden field (`sourceStorageKey`, `zipStorageKey`, `failureCode`, `attemptId`, `ownerUserId`, an unknown future field), none survives
-- [ ] `failureReason` present for `FAILED`, absent for every other status even when the input carries one
-- [ ] Quick gate passes; at least 4 new tests
+- [x] Given an item carrying every forbidden field (`sourceStorageKey`, `zipStorageKey`, `failureCode`, `attemptId`, `ownerUserId`, an unknown future field), none survives
+- [x] `failureReason` present for `FAILED`, absent for every other status even when the input carries one
+- [x] Quick gate passes; at least 4 new tests
 
 **Tests**: unit
 **Gate**: quick
+**Status**: ✅ Complete. 5 new unit tests in `src/processing-requests/projection.spec.ts` (unit 75 → 80). Every input carries all five forbidden fields, an unknown `someFutureField` and a `failureReason`; the output is compared with `toStrictEqual` (`:26`, `:38`) and its key set (`:39`), so a delete-list implementation fails on the unknown field. `OwnedItem` and `OwnedPage` live beside the function.
 
 ---
 
