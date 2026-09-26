@@ -146,15 +146,15 @@ Decisions from the gray-area discussion of 2026-09-26 are in `fiap-x-platform/.s
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| AUTH-01 | P1: Only authenticated calls reach the system | Execute | Implementing |
-| AUTH-02 | P1: Only authenticated calls reach the system | Execute | Implementing |
-| AUTH-03 | P1: Only authenticated calls reach the system | Execute | Implementing |
-| AUTH-04 | P2: Requests are owned by the authenticated user | Execute | Implementing |
-| AUTH-05 | P3: A user lists their own requests | Execute | Implementing |
-| AUTH-06 | P3: A user lists their own requests | Execute | Implementing |
-| AUTH-07 | P3: A user lists their own requests | Execute | Implementing |
-| AUTH-08 | P4: A user reads one of their requests | Execute | Implementing |
-| AUTH-09 | P1–P4: responses never expose storage keys or internal codes | Execute | Implementing |
+| AUTH-01 | P1: Only authenticated calls reach the system | Validate | Implementing (open: OI-2, case-insensitive scheme untested) |
+| AUTH-02 | P1: Only authenticated calls reach the system | Validate | Verified |
+| AUTH-03 | P1: Only authenticated calls reach the system | Validate | Implementing (open: OI-1, token-not-logged untested on the 503 and no-bearer paths) |
+| AUTH-04 | P2: Requests are owned by the authenticated user | Validate | Verified |
+| AUTH-05 | P3: A user lists their own requests | Validate | Verified |
+| AUTH-06 | P3: A user lists their own requests | Validate | Verified |
+| AUTH-07 | P3: A user lists their own requests | Validate | Verified |
+| AUTH-08 | P4: A user reads one of their requests | Validate | Verified |
+| AUTH-09 | P1–P4: responses never expose storage keys or internal codes | Validate | Verified |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
 
