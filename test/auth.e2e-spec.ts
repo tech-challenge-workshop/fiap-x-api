@@ -1,0 +1,177 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import {
+  INestApplication,
+  LoggerService,
+  ValidationPipe,
+} from '@nestjs/common';
+import request from 'supertest';
+import { App } from 'supertest/types';
+import { AppModule } from './../src/app.module';
+import { CATALOG_CLIENT } from './../src/processing-requests/services/create-processing-request.service';
+import { InMemoryCatalogClient } from './../src/processing-requests/adapters/in-memory-catalog-client.adapter';
+import { TestIdentityProvider } from './support/test-identity-provider';
+import { createSigningKey, SigningKey } from './support/jwks-server';
+import { signToken, tamperPayload } from './support/tokens';
+import { countCatalogCalls } from './support/catalog-calls';
+
+class CapturingLogger implements LoggerService {
+  readonly lines: string[] = [];
+  private capture = (...args: unknown[]) => {
+    this.lines.push(args.map((arg) => String(arg)).join(' '));
+  };
+  log = this.capture;
+  error = this.capture;
+  warn = this.capture;
+  debug = this.capture;
+  verbose = this.capture;
+  fatal = this.capture;
+}
+
+describe('Authentication (e2e)', () => {
+  const idp = new TestIdentityProvider();
+  let rogueKey: SigningKey;
+  let app: INestApplication<App>;
+  let catalogCalls: () => number;
+  let logger: CapturingLogger;
+
+  const validBody = {
+    ownerUserId: 'user-123',
+    sourceStorageKey: 'videos/clip.mp4',
+  };
+  const nowSeconds = () => Math.floor(Date.now() / 1000);
+
+  beforeAll(async () => {
+    await idp.start();
+    rogueKey = await createSigningKey('rogue-key');
+  });
+
+  afterAll(async () => {
+    await idp.stop();
+  });
+
+  beforeEach(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    logger = new CapturingLogger();
+    app.useLogger(logger);
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+    catalogCalls = countCatalogCalls(
+      moduleFixture.get<InMemoryCatalogClient>(CATALOG_CLIENT),
+    );
+    await app.init();
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  const create = (authorization?: string) => {
+    const req = request(app.getHttpServer()).post('/processing-requests');
+    if (authorization !== undefined) {
+      void req.set('Authorization', authorization);
+    }
+    return req.send(validBody);
+  };
+
+  it('accepts a valid bearer token and reaches the Catalog', async () => {
+    const res = await create(`Bearer ${await idp.token()}`);
+
+    expect(res.status).toBe(201);
+    expect(catalogCalls()).toBe(1);
+  });
+
+  it.each<[string, () => Promise<string | undefined>]>([
+    ['no Authorization header (AC P1.1)', () => Promise.resolve(undefined)],
+    [
+      'a scheme other than Bearer (edge case)',
+      () => Promise.resolve('Basic YWxpY2U6c2VjcmV0'),
+    ],
+    ['Bearer with no token (AC P1.1)', () => Promise.resolve('Bearer ')],
+    [
+      'a tampered token (AC P1.2)',
+      async () => `Bearer ${tamperPayload(await idp.token())}`,
+    ],
+    [
+      'a token signed by a key the provider does not publish (AC P1.2)',
+      async () => `Bearer ${await signToken(rogueKey)}`,
+    ],
+    [
+      'an expired token (AC P1.3)',
+      async () => `Bearer ${await idp.token({ exp: nowSeconds() - 1 })}`,
+    ],
+    [
+      'a token from another issuer (AC P1.4)',
+      async () =>
+        `Bearer ${await idp.token({ iss: 'http://evil.test/realms/x' })}`,
+    ],
+    [
+      'a token for another audience (AC P1.5)',
+      async () => `Bearer ${await idp.token({ aud: 'another-client' })}`,
+    ],
+    [
+      'a token without sub (AC P1.6)',
+      async () => `Bearer ${await idp.token({ sub: undefined })}`,
+    ],
+  ])('responds 401 without calling the Catalog for %s', async (_, header) => {
+    const res = await create(await header());
+
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ statusCode: 401, message: 'Unauthorized' });
+    expect(catalogCalls()).toBe(0);
+  });
+
+  it('responds 503 without calling the Catalog when the provider is down and no key is cached (AC P1.7)', async () => {
+    const token = await idp.token();
+    await idp.server.stop();
+    try {
+      const res = await create(`Bearer ${token}`);
+
+      expect(res.status).toBe(503);
+      expect(res.body).toEqual({
+        statusCode: 503,
+        message: 'Authentication temporarily unavailable',
+      });
+      expect(catalogCalls()).toBe(0);
+    } finally {
+      await idp.server.start();
+    }
+  });
+
+  it('serves /health without a token (AC P1.10)', async () => {
+    await request(app.getHttpServer())
+      .get('/health')
+      .expect(200)
+      .expect({ status: 'ok' });
+  });
+
+  it('protects a route that is not marked public', async () => {
+    await request(app.getHttpServer()).get('/').expect(401);
+  });
+
+  it('never logs the token or its signature, only the rejection class', async () => {
+    const tampered = tamperPayload(await idp.token());
+    const rogue = await signToken(rogueKey);
+
+    await create(`Bearer ${tampered}`).expect(401);
+    await create(`Bearer ${rogue}`).expect(401);
+
+    const logs = logger.lines.join('\n');
+    expect(logs).toContain('JWSSignatureVerificationFailed');
+    expect(logs).toContain('JWKSNoMatchingKey');
+    for (const token of [tampered, rogue]) {
+      const [header, payload, signature] = token.split('.');
+      expect(logs).not.toContain(signature);
+      expect(logs).not.toContain(payload);
+      expect(logs).not.toContain(header);
+    }
+  });
+});

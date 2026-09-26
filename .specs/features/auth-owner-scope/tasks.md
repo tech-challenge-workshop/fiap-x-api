@@ -183,14 +183,20 @@ T11
 - Skill: NONE
 
 **Done when**:
-- [ ] e2e through `AppModule` with a local key-set server: no header, `Basic` scheme, expired, tampered, wrong `iss`, wrong `aud`, no `sub` → 401 and the in-memory Catalog client records zero calls
-- [ ] `/health` answers without a token
-- [ ] A composition e2e: `AppModule` refuses to boot when each OIDC variable is missing, and the guard is the registered `APP_GUARD`
-- [ ] Existing e2e suites send a valid token and still pass (tests updated to authenticate; no assertion weakened)
-- [ ] Build gate passes
+- [x] e2e through `AppModule` with a local key-set server: no header, `Basic` scheme, expired, tampered, wrong `iss`, wrong `aud`, no `sub` → 401 and the in-memory Catalog client records zero calls
+- [x] `/health` answers without a token
+- [x] A composition e2e: `AppModule` refuses to boot when each OIDC variable is missing, and the guard is the registered `APP_GUARD`
+- [x] Existing e2e suites send a valid token and still pass (tests updated to authenticate; no assertion weakened)
+- [x] Build gate passes
 
 **Tests**: e2e
 **Gate**: build
+**Status**: ✅ Complete. e2e 6 → 24, unit unchanged at 54.
+- New suites: `test/auth.e2e-spec.ts` (14 tests) and `test/auth-composition.e2e-spec.ts` (4 tests).
+- `test/auth.e2e-spec.ts` also covers a key the provider does not publish, the 503 when the provider is down with nothing cached, and a check that a non-public route is protected.
+- `test/app.e2e-spec.ts` and `test/processing-requests.e2e-spec.ts` now start `TestIdentityProvider` and send a bearer token; they gained lines only.
+- Shared helpers: `test/support/test-identity-provider.ts` (key-set server, OIDC env, tokens) and `test/support/catalog-calls.ts` (counts calls on every Catalog client method).
+- Deviation: `test/jest-e2e.json` gained `testPathIgnorePatterns` for AppleDouble `._*` files, matching the unit config. Without it, e2e runs on the exFAT volume pick up phantom suites.
 
 ---
 
