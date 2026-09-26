@@ -327,11 +327,15 @@ T12
 - Skill: NONE
 
 **Done when**:
-- [ ] e2e: the owner gets 200 with the projected item; another user, a random UUID and a malformed id get byte-identical 404 bodies; Catalog failure → 502
-- [ ] Build gate passes
+- [x] e2e: the owner gets 200 with the projected item; another user, a random UUID and a malformed id get byte-identical 404 bodies; Catalog failure → 502
+- [x] Build gate passes
 
 **Tests**: e2e
 **Gate**: build
+**Status**: ✅ Complete. 4 new e2e tests in `test/get-processing-request.e2e-spec.ts` (e2e 43 → 47), unit unchanged at 80. Build gate green (lint, typecheck, unit, e2e, build).
+- `:69-76` the owner gets exactly `processingRequestId`, `status`, `createdAt`, `updatedAt`, while the in-memory Catalog returns `ownerUserId` and `sourceStorageKey` as well; `:81` no value is the storage key.
+- `:95-103` `bob` reading `alice`'s id, a random UUID and `not-a-uuid` get `{ statusCode: 404, message: "Processing request not found" }` with identical response text and content type; `:104` the Catalog was asked under `bob`, so scoping happens in the query, not after it.
+- `:113` → 502 `Catalog unavailable`; `:126-127` no token → 401 with zero Catalog calls.
 
 ---
 
