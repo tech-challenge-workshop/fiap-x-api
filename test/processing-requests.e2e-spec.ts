@@ -31,7 +31,7 @@ describe('The key-supplied create path is gone (e2e)', () => {
   beforeAll(async () => {
     await idp.start();
     storageEnv.set();
-    token = await idp.token();
+    token = await idp.token({ email: 'alice@fiapx.local' });
   });
 
   afterAll(async () => {
@@ -137,7 +137,12 @@ describe('The key-supplied create path is gone (e2e)', () => {
       .send({ sourceStorageKey: 'sources/bob/their-video.mp4' })
       .expect(201);
 
-    expect(createSpy).toHaveBeenCalledWith('alice', upload.key, 'key-1');
+    expect(createSpy).toHaveBeenCalledWith(
+      'alice',
+      'alice@fiapx.local',
+      upload.key,
+      'key-1',
+    );
     expect(upload.key).toBe(`sources/alice/${upload.uploadId}.mp4`);
   });
 });

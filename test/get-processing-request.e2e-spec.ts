@@ -24,8 +24,8 @@ describe('GET /processing-requests/:id (e2e)', () => {
   beforeAll(async () => {
     await idp.start();
     storageEnv.set();
-    alice = await idp.token({ sub: 'alice' });
-    bob = await idp.token({ sub: 'bob' });
+    alice = await idp.token({ sub: 'alice', email: 'alice@fiapx.local' });
+    bob = await idp.token({ sub: 'bob', email: 'bob@fiapx.local' });
   });
 
   afterAll(async () => {

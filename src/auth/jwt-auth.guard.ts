@@ -15,6 +15,7 @@ import { IdentityProviderUnavailableError } from './identity-provider-unavailabl
 
 export interface AuthenticatedRequest extends Request {
   owner: string;
+  ownerEmail?: string;
 }
 
 const BEARER = /^Bearer ([^\s]+)$/i;
@@ -50,7 +51,9 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      request.owner = (await this.verifier.verify(token)).sub;
+      const verified = await this.verifier.verify(token);
+      request.owner = verified.sub;
+      request.ownerEmail = verified.email;
       return true;
     } catch (error) {
       if (error instanceof IdentityProviderUnavailableError) {

@@ -14,6 +14,7 @@ describe('InMemoryCatalogClient', () => {
     keySequence += 1;
     const result = await adapter.createProcessingRequest(
       owner,
+      `${owner}@fiapx.local`,
       source,
       `idem-${keySequence}`,
     );
@@ -26,6 +27,7 @@ describe('InMemoryCatalogClient', () => {
   it('returns a processing request id and RECEIVED status for valid input', async () => {
     const result = await adapter.createProcessingRequest(
       'user-123',
+      'user-123@fiapx.local',
       'videos/clip.mp4',
       'idem-1',
     );
@@ -39,11 +41,13 @@ describe('InMemoryCatalogClient', () => {
   it('returns deterministic sequential ids', async () => {
     const first = await adapter.createProcessingRequest(
       'user-1',
+      'user-1@fiapx.local',
       'source-1',
       'idem-1',
     );
     const second = await adapter.createProcessingRequest(
       'user-2',
+      'user-2@fiapx.local',
       'source-2',
       'idem-2',
     );
@@ -60,7 +64,12 @@ describe('InMemoryCatalogClient', () => {
     adapter.setNextRequestShouldReject(true);
 
     await expect(
-      adapter.createProcessingRequest('user-123', 'videos/clip.mp4', 'idem-1'),
+      adapter.createProcessingRequest(
+        'user-123',
+        'user-123@fiapx.local',
+        'videos/clip.mp4',
+        'idem-1',
+      ),
     ).rejects.toThrow(CatalogUnavailableError);
   });
 
@@ -132,11 +141,13 @@ describe('InMemoryCatalogClient', () => {
     it('replays the same request for the same owner, key and source, storing one', async () => {
       const first = await adapter.createProcessingRequest(
         'alice',
+        'alice@fiapx.local',
         'sources/alice/a.mp4',
         'idem-1',
       );
       const again = await adapter.createProcessingRequest(
         'alice',
+        'alice@fiapx.local',
         'sources/alice/a.mp4',
         'idem-1',
       );
@@ -154,12 +165,14 @@ describe('InMemoryCatalogClient', () => {
     it('answers conflict for the same owner and key with another source, storing nothing', async () => {
       await adapter.createProcessingRequest(
         'alice',
+        'alice@fiapx.local',
         'sources/alice/a.mp4',
         'idem-1',
       );
 
       const other = await adapter.createProcessingRequest(
         'alice',
+        'alice@fiapx.local',
         'sources/alice/b.mp4',
         'idem-1',
       );
@@ -171,12 +184,14 @@ describe('InMemoryCatalogClient', () => {
     it("replays the owner's request for a known source under a new key, storing nothing and leaving the new key unbound (HARD-02)", async () => {
       const first = await adapter.createProcessingRequest(
         'alice',
+        'alice@fiapx.local',
         'sources/alice/a.mp4',
         'idem-1',
       );
 
       const second = await adapter.createProcessingRequest(
         'alice',
+        'alice@fiapx.local',
         'sources/alice/a.mp4',
         'idem-2',
       );
@@ -188,6 +203,7 @@ describe('InMemoryCatalogClient', () => {
       await expect(
         adapter.createProcessingRequest(
           'alice',
+          'alice@fiapx.local',
           'sources/alice/b.mp4',
           'idem-2',
         ),
@@ -198,17 +214,20 @@ describe('InMemoryCatalogClient', () => {
     it('checks the key first: a key bound to another source is a conflict even when the new source already has a request', async () => {
       await adapter.createProcessingRequest(
         'alice',
+        'alice@fiapx.local',
         'sources/alice/a.mp4',
         'idem-1',
       );
       await adapter.createProcessingRequest(
         'alice',
+        'alice@fiapx.local',
         'sources/alice/b.mp4',
         'idem-2',
       );
 
       const res = await adapter.createProcessingRequest(
         'alice',
+        'alice@fiapx.local',
         'sources/alice/b.mp4',
         'idem-1',
       );
@@ -218,10 +237,16 @@ describe('InMemoryCatalogClient', () => {
     });
 
     it("does not replay another owner's request for the same source", async () => {
-      await adapter.createProcessingRequest('alice', 'shared.mp4', 'idem-1');
+      await adapter.createProcessingRequest(
+        'alice',
+        'alice@fiapx.local',
+        'shared.mp4',
+        'idem-1',
+      );
 
       const bobs = await adapter.createProcessingRequest(
         'bob',
+        'bob@fiapx.local',
         'shared.mp4',
         'idem-2',
       );
@@ -233,11 +258,13 @@ describe('InMemoryCatalogClient', () => {
     it('scopes the key per owner: the same key from two owners creates two requests', async () => {
       const alices = await adapter.createProcessingRequest(
         'alice',
+        'alice@fiapx.local',
         'sources/alice/a.mp4',
         'shared',
       );
       const bobs = await adapter.createProcessingRequest(
         'bob',
+        'bob@fiapx.local',
         'sources/bob/b.mp4',
         'shared',
       );

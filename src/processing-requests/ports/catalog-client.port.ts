@@ -38,6 +38,7 @@ export type CatalogArchive = { zipStorageKey: string } | 'not-completed';
 export interface CatalogClient {
   createProcessingRequest(
     ownerUserId: string,
+    ownerEmail: string,
     sourceStorageKey: string,
     idempotencyKey: string,
   ): Promise<CatalogCreateOutcome>;
