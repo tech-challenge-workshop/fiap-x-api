@@ -7,9 +7,10 @@ export interface TokenVerifierOptions {
 }
 
 /**
- * Verifies a compact JWT and returns its `sub` and nothing else, so no other
- * claim can reach an authorization decision (AC P1.9). `exp`, `iss` and
- * `aud` are enforced by `jwtVerify`, and a token without `exp` is refused.
+ * Verifies a compact JWT and returns its `sub` and, when present, its
+ * standard `email` claim. Nothing else is read. `email` never enters any
+ * authorization decision (AC P1.9 still holds for `sub`) — it exists only
+ * so the caller can pass it on for notification purposes.
  */
 export class TokenVerifier {
   constructor(
@@ -17,7 +18,7 @@ export class TokenVerifier {
     private readonly options: TokenVerifierOptions,
   ) {}
 
-  async verify(token: string): Promise<{ sub: string }> {
+  async verify(token: string): Promise<{ sub: string; email?: string }> {
     const { payload } = await jwtVerify(token, this.keys.keyFor, {
       issuer: this.options.issuer,
       audience: this.options.audience,
@@ -33,6 +34,8 @@ export class TokenVerifier {
         'check_failed',
       );
     }
-    return { sub: payload.sub };
+    return typeof payload.email === 'string' && payload.email !== ''
+      ? { sub: payload.sub, email: payload.email }
+      : { sub: payload.sub };
   }
 }
