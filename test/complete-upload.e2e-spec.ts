@@ -165,6 +165,26 @@ describe('POST /uploads/:uploadId/complete (e2e)', () => {
     );
   });
 
+  it('trims whitespace padding from the token email before passing it to the Catalog', async () => {
+    const paddedEmail = await idp.token({
+      sub: 'alice',
+      email: '  alice@fiapx.local  ',
+    });
+    const upload = await uploaded(20 * MiB, paddedEmail);
+    const createSpy = jest.spyOn(catalog, 'createProcessingRequest');
+
+    await confirm(app, paddedEmail, upload.uploadId, 'key-padded-email').expect(
+      201,
+    );
+
+    expect(createSpy).toHaveBeenCalledWith(
+      'alice',
+      'alice@fiapx.local',
+      `sources/alice/${upload.uploadId}.mp4`,
+      'key-padded-email',
+    );
+  });
+
   it('never logs the owner email', async () => {
     const withEmail = await idp.token({
       sub: 'alice',

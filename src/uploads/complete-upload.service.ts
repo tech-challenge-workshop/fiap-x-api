@@ -59,6 +59,7 @@ export class CompleteUploadService {
         'The authenticated token does not carry an email claim',
       );
     }
+    ownerEmail = ownerEmail.trim();
     if (!idempotencyKey?.trim()) {
       throw new BadRequestException('Idempotency-Key header is required');
     }
