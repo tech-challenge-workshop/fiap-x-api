@@ -120,12 +120,12 @@ The API emits no structured logs, no metrics, and its only health signal is a fi
 | OBS-05 | P1: Structured logs (invalid header) | Design | Implementing (parser unit-verified in T1; edge replacement lands in T4/T16) |
 | OBS-06 | P1: Structured logs (email redaction) | Design | Implementing (redaction unit-verified in T2; depth bounded to root + one level; e2e in T16) |
 | OBS-07 | P1: Structured logs (endpoint noise) | Design | Implementing (autoLogging.ignore unit-verified in T2; e2e in T16) |
-| OBS-08 | P2: Metrics (exposition set) | Design | Implementing (registry unit-verified in T6; middleware unit-verified in T7; controller in T8; e2e in T16) |
+| OBS-08 | P2: Metrics (exposition set) | Design | Implementing (registry T6, middleware T7, controller unit-verified in T8; e2e in T16) |
 | OBS-09 | P2: Metrics (rejected uploads) | Design | Implementing (registry unit-verified in T6; edge call site in T10; e2e in T16) |
 | OBS-10 | P2: Metrics (denied downloads) | Design | Implementing (registry unit-verified in T6; edge call site in T11; e2e in T16) |
 | OBS-11 | P2: Health (readiness) | Design | Pending |
 | OBS-12 | P2: Health (liveness) | Design | Pending |
-| OBS-13 | P2: Health/Metrics (no auth) | Design | Pending |
+| OBS-13 | P2: Health/Metrics (no auth) | Design | Implementing (metrics route @Public unit-pinned in T8; liveness/health e2e in T16) |
 
 **ID format:** `OBS-[NUMBER]` — this repo owns OBS-01..15; `processing-catalog` owns OBS-16..30; `processing-worker` OBS-31..45; `notification-service` OBS-46..60; `fiap-x-platform` OBS-61..75.
 

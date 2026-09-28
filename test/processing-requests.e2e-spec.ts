@@ -85,7 +85,10 @@ describe('The key-supplied create path is gone (e2e)', () => {
     ).router;
 
     const routes = router.stack
-      .filter((layer) => layer.route)
+      // S8 runs correlation and metrics middleware for all routes; their
+      // '{*splat}' catch-all pseudo-routes are not part of the business
+      // surface this test pins.
+      .filter((layer) => layer.route && !layer.route.path.includes('*'))
       .map(
         (layer) =>
           `${Object.keys(layer.route!.methods).join(',').toUpperCase()} ${layer.route!.path}`,
@@ -95,6 +98,7 @@ describe('The key-supplied create path is gone (e2e)', () => {
       [
         'GET /',
         'GET /health',
+        'GET /metrics',
         'GET /processing-requests',
         'GET /processing-requests/:id',
         'GET /processing-requests/:id/download',

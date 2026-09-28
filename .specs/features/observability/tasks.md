@@ -261,15 +261,17 @@ T16
 
 **Done when**:
 
-- [ ] `GET /metrics` responds 200 with the exposition format and all four families after traffic
-- [ ] Request without a JWT is not challenged (guard bypass verified)
-- [ ] Gate check passes: `npm test && npm run test:e2e` (existing e2e green)
-- [ ] Test count: 3 new unit tests pass (no silent deletions); e2e assertions in T16
+- [x] `GET /metrics` responds 200 with the exposition format and all four families after traffic
+- [x] Request without a JWT is not challenged (guard bypass verified)
+- [x] Gate check passes: `npm test && npm run test:e2e` (existing e2e green)
+- [x] Test count: 3 new unit tests pass (no silent deletions); e2e assertions in T16
 
 **Tests**: unit
 **Gate**: quick
 
 **Commit**: `feat(api): expose the prometheus metrics endpoint`
+
+**Status**: ✅ Complete. `MetricsController` (`@Public() @Controller()`, `@Get('metrics')`) serves `apiMetrics.metrics()` via raw `setHeader` + `res.end` — express's `res.send` reflects `; charset=utf-8` into the Content-Type, and the OBS-08 contract pins `text/plain; version=0.0.4` exactly. Registered in ObservabilityModule's controllers (the module touch the task omits). 3 new unit tests in `metrics.controller.spec.ts` (unit 180 → 183, 0 failed). Cross-feature impact: `test/processing-requests.e2e-spec.ts` pins the exact route surface; S8 legitimately adds `GET /metrics` (OBS-08/13) and the two all-route middleware wildcards, so the pinned list gains `GET /metrics` and the enumeration now excludes `{*splat}` middleware catch-alls — the business-route pinning stays an exact `toEqual`. E2e green: 12/12 suites (14 skips are the pre-existing RustFS-env gates).
 
 ---
 
