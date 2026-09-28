@@ -12,9 +12,7 @@ describe('ApiMetrics', () => {
     metrics.recordUpload('accepted');
 
     const exposition = await metrics.metrics();
-    expect(exposition).toContain(
-      'fiapx_uploads_total{outcome="accepted"} 1',
-    );
+    expect(exposition).toContain('fiapx_uploads_total{outcome="accepted"} 1');
     expect(exposition).not.toContain('outcome="rejected"');
   });
 
@@ -23,9 +21,7 @@ describe('ApiMetrics', () => {
     metrics.recordUpload('rejected');
 
     const exposition = await metrics.metrics();
-    expect(exposition).toContain(
-      'fiapx_uploads_total{outcome="rejected"} 2',
-    );
+    expect(exposition).toContain('fiapx_uploads_total{outcome="rejected"} 2');
     expect(exposition).not.toContain('outcome="accepted"');
   });
 
@@ -72,9 +68,7 @@ describe('ApiMetrics', () => {
     metrics.recordUpload('accepted');
     metrics.recordHttpRequest('POST', '/uploads', '201', 0.5);
     const exposition = await metrics.metrics();
-    expect(exposition).toContain(
-      'fiapx_uploads_total{outcome="accepted"} 1',
-    );
+    expect(exposition).toContain('fiapx_uploads_total{outcome="accepted"} 1');
     expect(exposition).toContain(
       'fiapx_http_requests_total{method="POST",route="/uploads",status="201"} 1',
     );
