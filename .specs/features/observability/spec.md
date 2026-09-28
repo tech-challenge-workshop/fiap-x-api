@@ -113,23 +113,23 @@ The API emits no structured logs, no metrics, and its only health signal is a fi
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| OBS-01 | P1: Structured logs (assign id) | Design | Implementing (edge middleware wired in T4, probe-verified; e2e in T16) |
-| OBS-02 | P1: Structured logs (JSON shape) | Design | Implementing (config unit-verified in T2, module wired in T3, bootstrap smoke-verified in T5; e2e in T16) |
-| OBS-03 | P1: Structured logs (forward header) | Design | Implementing (header+body unit-verified T13, caller threading unit-verified T15; e2e sweep T16) |
-| OBS-04 | P1: Structured logs (confirm carries id) | Design | Implementing (port T12, adapters T13/T14, caller threading unit-verified T15; e2e sweep T16) |
-| OBS-05 | P1: Structured logs (invalid header) | Design | Implementing (parser unit-verified in T1; edge replacement lands in T4/T16) |
-| OBS-06 | P1: Structured logs (email redaction) | Design | Implementing (redaction unit-verified in T2; depth bounded to root + one level; e2e in T16) |
-| OBS-07 | P1: Structured logs (endpoint noise) | Design | Implementing (autoLogging.ignore unit-verified in T2; e2e in T16) |
-| OBS-08 | P2: Metrics (exposition set) | Design | Implementing (registry T6, middleware T7, controller unit-verified in T8; e2e in T16) |
-| OBS-09 | P2: Metrics (rejected uploads) | Design | Implementing (registry T6, edge filter unit-verified in T10, accepted counter lands in T15; e2e in T16) |
-| OBS-10 | P2: Metrics (denied downloads) | Design | Implementing (registry T6, service unit-verified in T11; e2e in T16) |
-| OBS-11 | P2: Health (readiness) | Design | Implementing (`/health` serves since initial slice; semantics documented; e2e in T16) |
-| OBS-12 | P2: Health (liveness) | Design | Implementing (`/health/live` wired in T9; e2e in T16) |
-| OBS-13 | P2: Health/Metrics (no auth) | Design | Implementing (metrics route @Public unit-pinned in T8; liveness/health e2e in T16) |
+| OBS-01 | P1: Structured logs (assign id) | Design | Verified |
+| OBS-02 | P1: Structured logs (JSON shape) | Design | Verified |
+| OBS-03 | P1: Structured logs (forward header) | Design | Verified |
+| OBS-04 | P1: Structured logs (confirm carries id) | Design | Verified |
+| OBS-05 | P1: Structured logs (invalid header) | Design | Verified |
+| OBS-06 | P1: Structured logs (email redaction) | Design | Verified |
+| OBS-07 | P1: Structured logs (endpoint noise) | Design | Verified |
+| OBS-08 | P2: Metrics (exposition set) | Design | Verified |
+| OBS-09 | P2: Metrics (rejected uploads) | Design | Verified |
+| OBS-10 | P2: Metrics (denied downloads) | Design | Verified |
+| OBS-11 | P2: Health (readiness) | Design | Verified |
+| OBS-12 | P2: Health (liveness) | Design | Verified |
+| OBS-13 | P2: Health/Metrics (no auth) | Design | Verified |
 
 **ID format:** `OBS-[NUMBER]` — this repo owns OBS-01..15; `processing-catalog` owns OBS-16..30; `processing-worker` OBS-31..45; `notification-service` OBS-46..60; `fiap-x-platform` OBS-61..75.
 
-**Coverage:** 13 total, 0 mapped to tasks, 13 unmapped (mapping happens in Tasks).
+**Coverage:** 13 total, 13 mapped to tasks, 0 unmapped
 
 ---
 

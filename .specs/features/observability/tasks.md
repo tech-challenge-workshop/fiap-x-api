@@ -463,14 +463,16 @@ T16
 
 **Done when**:
 
-- [ ] All assertions above pass against the in-process app with existing fakes
-- [ ] Gate check passes: `npm test && npm run test:e2e && npm run lint && npm run typecheck && npm run build`
-- [ ] Test count: 12 new e2e tests pass (no silent deletions)
+- [x] All assertions above pass against the in-process app with existing fakes
+- [x] Gate check passes: `npm test && npm run test:e2e && npm run lint && npm run typecheck && npm run build`
+- [x] Test count: 12 new e2e tests pass (no silent deletions)
 
 **Tests**: e2e
 **Gate**: full
 
 **Commit**: `test(api): prove the observability slice end to end`
+
+**Status**: ✅ Complete. `test/observability.e2e-spec.ts` (12 tests) + `test/support/listen.ts` (binds `127.0.0.1`, the V40 guard for new suites) assert the whole slice against the in-process app: health+live and /metrics 200 unauthenticated (exposition content type pinned exactly); inbound correlation id echoed; id forwarded to the catalog on a real HTTP fake (header + body, same value); overlong and blank ids replaced with the generated id echoed and propagated; every captured stdout log line is one JSON object carrying `timestamp`/`level`/`msg`/`service` and the request's `correlationId`; captured lines free of bearer token, owner email, and zip key; zero access-log lines for `/health`, `/health/live`, `/metrics`; after one accepted upload + one edge-rejected upload + one non-owner download, `/metrics` shows exactly `accepted 1` / `rejected 1` / `denied 1` and no `authorized`. Log capture required marking `process.stdout` tampered at import time (pino's `hasBeenTampered` check) plus a bounded poll for its async destination — a fixed settle flaked under the full multi-worker run. Full gate green: unit 199/199, e2e 13/13 (153 passed, 14 pre-existing env skips), lint, typecheck, build.
 
 ---
 
