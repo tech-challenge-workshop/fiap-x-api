@@ -15,17 +15,25 @@ export class HttpCatalogClient implements CatalogClient {
     ownerEmail: string,
     sourceStorageKey: string,
     idempotencyKey: string,
+    correlationId?: string,
   ): Promise<CatalogCreateOutcome> {
     const { status, data } = await this.request(
       `${this.catalogBaseUrl}/processing-requests`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          // The Catalog reads both channels; they carry the same value (AD-016).
+          ...(correlationId !== undefined
+            ? { 'X-Correlation-Id': correlationId }
+            : {}),
+        },
         body: JSON.stringify({
           ownerUserId,
           ownerEmail,
           sourceStorageKey,
           idempotencyKey,
+          ...(correlationId !== undefined ? { correlationId } : {}),
         }),
       },
     );

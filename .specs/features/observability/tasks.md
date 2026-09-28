@@ -387,14 +387,16 @@ T16
 
 **Done when**:
 
-- [ ] Adapter unit test captures both header and body field on the wire (fake server)
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: 3 new unit tests pass (no silent deletions)
+- [x] Adapter unit test captures both header and body field on the wire (fake server)
+- [x] Gate check passes: `npm test`
+- [x] Test count: 3 new unit tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
 
 **Commit**: `feat(api): send the correlation id to the catalog over http`
+
+**Status**: ✅ Complete. `HttpCatalogClient.createProcessingRequest` sends `X-Correlation-Id` and the `correlationId` body field when the id is present (both channels, same value per AD-016) and neither when it is omitted. The existing local-server spec block now captures method/headers/body; 3 new tests assert both channels carry the same value, verbatim transport of an internal-space id, and absence when omitted (unit 190 → 193, 0 failed; lint clean).
 
 ---
 
