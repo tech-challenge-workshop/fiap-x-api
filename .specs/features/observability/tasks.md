@@ -312,14 +312,16 @@ T16
 
 **Done when**:
 
-- [ ] Rejected start increments only `outcome="rejected"` (unit, adapter-isolated)
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: 3 new unit tests pass (no silent deletions)
+- [x] Rejected start increments only `outcome="rejected"` (unit, adapter-isolated)
+- [x] Gate check passes: `npm test`
+- [x] Test count: 3 new unit tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
 
 **Commit**: `feat(api): count rejected uploads at the edge`
+
+**Status**: ✅ Complete. The type/size validation runs in the global ValidationPipe before `StartUploadService` executes, so the counting hook is `RejectedUploadMetricFilter` (`@Catch(BadRequestException)`, lives in the task's pinned file) registered via `@UseFilters` on the controller's `start` method (wiring the task omits; method-scoped so complete-upload 400s are not miscounted). Nest runs exactly one filter per throw, so the filter counts then delegates to the existing `CatalogErrorFilter`, keeping the controller's `{statusCode, message}` error contract byte-identical — verified by the full e2e suite (the first pass re-shaped bodies and 13 e2e tests caught it; delegation fixed it). 3 new unit tests in `start-upload.service.spec.ts` (unit 183 → 186, 0 failed; e2e 12/12).
 
 ---
 

@@ -13,7 +13,11 @@ import { Owner } from '../auth/owner.decorator';
 import { OwnerEmail } from '../auth/owner-email.decorator';
 import { CatalogErrorFilter } from '../processing-requests/filters/catalog-error.filter';
 import { StartUploadDto } from './start-upload.dto';
-import { StartedUpload, StartUploadService } from './start-upload.service';
+import {
+  RejectedUploadMetricFilter,
+  StartedUpload,
+  StartUploadService,
+} from './start-upload.service';
 import { CompleteUploadService } from './complete-upload.service';
 
 /** Every upload belongs to the authenticated owner. */
@@ -26,6 +30,7 @@ export class UploadsController {
   ) {}
 
   @Post()
+  @UseFilters(RejectedUploadMetricFilter)
   start(
     @Owner() owner: string,
     @Body() dto: StartUploadDto,
