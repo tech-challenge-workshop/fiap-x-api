@@ -98,6 +98,7 @@ describe('The key-supplied create path is gone (e2e)', () => {
       [
         'GET /',
         'GET /health',
+        'GET /health/live',
         'GET /metrics',
         'GET /processing-requests',
         'GET /processing-requests/:id',

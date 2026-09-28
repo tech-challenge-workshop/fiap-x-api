@@ -287,14 +287,16 @@ T16
 
 **Done when**:
 
-- [ ] Both endpoints return 200 on a booted app without a token
-- [ ] Gate check passes: `npm test && npm run test:e2e`
-- [ ] Test count: e2e assertions in T16; no new unit tests
+- [x] Both endpoints return 200 on a booted app without a token
+- [x] Gate check passes: `npm test && npm run test:e2e`
+- [x] Test count: e2e assertions in T16; no new unit tests
 
 **Tests**: none
 **Gate**: quick
 
 **Commit**: `feat(api): add the liveness endpoint`
+
+**Status**: ✅ Complete. `GET /health/live` added to the existing `@Public()` HealthController, returning `{status:'ok'}` — liveness is 200 while the event loop serves, readiness (`/health`) semantics untouched (AD-017 split; the API has no hard startup dependency, JWKS fetches lazily). No new unit tests per task/matrix (route assertions consolidated in T16's e2e). Same cross-feature surface pin as T8: `test/processing-requests.e2e-spec.ts` gains `GET /health/live` in its exact route list (OBS-12 mandated). Gates green: unit 183/183, e2e 12/12 (14 pre-existing env skips).
 
 ---
 
