@@ -108,16 +108,18 @@ T16
 
 **Done when**:
 
-- [ ] A pino instance built from this config emits one JSON object per line carrying `timestamp`, `level`, `msg`, `service: 'fiap-x-api'`, and the ALS `correlationId` when set
-- [ ] Redaction replaces the listed paths in nested objects; an email-like value under any `email`/`ownerEmail` key never survives
-- [ ] `autoLogging.ignore` matches the three endpoints exactly (and only them)
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: 8 new unit tests pass (no silent deletions)
+- [x] A pino instance built from this config emits one JSON object per line carrying `timestamp`, `level`, `msg`, `service: 'fiap-x-api'`, and the ALS `correlationId` when set
+- [x] Redaction replaces the listed paths in nested objects; an email-like value under any `email`/`ownerEmail` key never survives
+- [x] `autoLogging.ignore` matches the three endpoints exactly (and only them)
+- [x] Gate check passes: `npm test`
+- [x] Test count: 8 new unit tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
 
 **Commit**: `feat(api): add the structured logger config with redaction`
+
+**Status**: ✅ Complete. `logger.config.ts` builds the root config from a `CorrelationContext`: mixin injects `service` on every line plus `correlationId` when ALS-scoped, `timestamp` key per OBS-02 (pino default is `time`), redaction with `remove: true`, `genReqId` mirroring the middleware rule, `autoLogging.ignore` for the three endpoints, `LOG_LEVEL` default `info`. Two SPEC_DEVIATIONs (marked in code): bare root keys added to the redact paths (`*.x` needs a parent key, so root-level `{ ownerEmail }` survived) and `service` moved from `customProps` into the mixin (customProps never reaches root-instance lines, breaking the OBS-02 "any log line" outcome). 8 new unit tests in `logger.config.spec.ts` (unit 162 → 170, 0 failed). Gap noted: pino redact paths bound depth to root + one level.
 
 ---
 

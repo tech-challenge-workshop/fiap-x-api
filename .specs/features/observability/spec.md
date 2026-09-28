@@ -114,12 +114,12 @@ The API emits no structured logs, no metrics, and its only health signal is a fi
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
 | OBS-01 | P1: Structured logs (assign id) | Design | Pending |
-| OBS-02 | P1: Structured logs (JSON shape) | Design | Pending |
+| OBS-02 | P1: Structured logs (JSON shape) | Design | Implementing (config unit-verified in T2; app-level e2e in T16) |
 | OBS-03 | P1: Structured logs (forward header) | Design | Pending |
 | OBS-04 | P1: Structured logs (confirm carries id) | Design | Pending |
 | OBS-05 | P1: Structured logs (invalid header) | Design | Implementing (parser unit-verified in T1; edge replacement lands in T4/T16) |
-| OBS-06 | P1: Structured logs (email redaction) | Design | Pending |
-| OBS-07 | P1: Structured logs (endpoint noise) | Design | Pending |
+| OBS-06 | P1: Structured logs (email redaction) | Design | Implementing (redaction unit-verified in T2; depth bounded to root + one level; e2e in T16) |
+| OBS-07 | P1: Structured logs (endpoint noise) | Design | Implementing (autoLogging.ignore unit-verified in T2; e2e in T16) |
 | OBS-08 | P2: Metrics (exposition set) | Design | Pending |
 | OBS-09 | P2: Metrics (rejected uploads) | Design | Pending |
 | OBS-10 | P2: Metrics (denied downloads) | Design | Pending |
