@@ -210,15 +210,17 @@ T16
 
 **Done when**:
 
-- [ ] Counters increment exactly once per call; labels bounded to the spec sets
-- [ ] `resetMetrics()` returns every metric to zero without re-registering duplicates
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: 6 new unit tests pass (no silent deletions)
+- [x] Counters increment exactly once per call; labels bounded to the spec sets
+- [x] `resetMetrics()` returns every metric to zero without re-registering duplicates
+- [x] Gate check passes: `npm test`
+- [x] Test count: 6 new unit tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
 
 **Commit**: `feat(api): add the fiapx metrics registry and outcome counters`
+
+**Status**: ✅ Complete. `metrics.ts` holds `ApiMetrics` on a dedicated `Registry` (never the prom-client global) with the four families — `fiapx_uploads_total{outcome}`, `fiapx_downloads_total{outcome}`, `fiapx_http_requests_total{method,route,status}`, `fiapx_http_request_duration_seconds{method,route,status}` — plus `metrics()`, `resetMetrics()`, and one process-wide `apiMetrics` instance (same use-one-instance convention as the correlation context, so edge call sites share the registry without module wiring no task lists). 6 new unit tests in `metrics.spec.ts` assert the exposition text, the untouched global registry, and reset-then-re-record without duplicates (unit 170 → 176, 0 failed).
 
 ---
 
