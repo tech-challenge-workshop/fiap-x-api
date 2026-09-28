@@ -8,6 +8,7 @@ import { StorageModule } from './storage/storage.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { ObservabilityModule } from './observability/observability.module';
 import { CorrelationMiddleware } from './observability/correlation.middleware';
+import { HttpMetricsMiddleware } from './observability/http-metrics.middleware';
 
 @Module({
   imports: [
@@ -22,6 +23,6 @@ import { CorrelationMiddleware } from './observability/correlation.middleware';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(CorrelationMiddleware).forRoutes('*');
+    consumer.apply(CorrelationMiddleware, HttpMetricsMiddleware).forRoutes('*');
   }
 }

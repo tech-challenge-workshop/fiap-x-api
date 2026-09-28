@@ -236,14 +236,16 @@ T16
 
 **Done when**:
 
-- [ ] One accepted request and one 404 produce exactly one series each, with `route` equal to the template for the former and `'unmatched'` for the latter
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: 4 new unit tests pass (no silent deletions)
+- [x] One accepted request and one 404 produce exactly one series each, with `route` equal to the template for the former and `'unmatched'` for the latter
+- [x] Gate check passes: `npm test`
+- [x] Test count: 4 new unit tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
 
 **Commit**: `feat(api): add the http metrics middleware`
+
+**Status**: ✅ Complete. `HttpMetricsMiddleware` counts on response `finish` with the express route template (`'unmatched'` when none — bounded cardinality) and elapsed seconds, all inside try/catch so counting can never fail a request. Registered in `AppModule.configure` via `apply(CorrelationMiddleware, HttpMetricsMiddleware)` — the registration touch the task's Where omits. 4 new unit tests in `http-metrics.middleware.spec.ts` drive a real express app: template vs unmatched series, exactly-once counting over three requests, and pipeline-survival when counting throws (unit 176 → 180, 0 failed; lint clean).
 
 ---
 
