@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import type { LevelWithSilent } from 'pino';
 import type { Options as PinoHttpOptions } from 'pino-http';
 import { CorrelationContext, parseCorrelationId } from './correlation-context';
 
@@ -42,7 +41,7 @@ export function buildRootLoggerConfig(
 ): RootLoggerConfig {
   return {
     pinoHttp: {
-      level: (process.env.LOG_LEVEL ?? 'info') as LevelWithSilent,
+      level: process.env.LOG_LEVEL ?? 'info',
       timestamp: () => `,"timestamp":${Date.now()}`,
       mixin: () => {
         const correlationId = context.getCorrelationId();

@@ -8,8 +8,8 @@ import { buildRootLoggerConfig } from './logger.config';
 function createCapturingLogger(context: CorrelationContext) {
   const raw: string[] = [];
   const sink = new Writable({
-    write(chunk, _encoding, callback) {
-      raw.push(chunk.toString());
+    write(chunk: unknown, _encoding, callback) {
+      raw.push(String(chunk));
       callback();
     },
   });

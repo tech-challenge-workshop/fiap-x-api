@@ -135,14 +135,16 @@ T16
 
 **Done when**:
 
-- [ ] Module compiles and exports what AppModule needs
-- [ ] Gate check passes: `npm run lint && npm run typecheck && npm run build`
-- [ ] Test count: no new tests (config layer - matrix)
+- [x] Module compiles and exports what AppModule needs
+- [x] Gate check passes: `npm run lint && npm run typecheck && npm run build`
+- [x] Test count: no new tests (config layer - matrix)
 
 **Tests**: none
 **Gate**: build
 
 **Commit**: `feat(api): add the observability module`
+
+**Status**: ✅ Complete. `observability.module.ts` provides one process-wide `CorrelationContext` (useValue singleton, so the pino mixin and injected consumers share the same ALS store) and imports `LoggerModule.forRootAsync` with a lazy `useFactory` over that instance. Includes two lint fixes on T2's files, caught here because T3 is the first build gate (`no-unsafe-argument` on the Writable chunk, unnecessary `LevelWithSilent` cast). No new tests per matrix; lint, typecheck, unit 170/170, build all green.
 
 ---
 
