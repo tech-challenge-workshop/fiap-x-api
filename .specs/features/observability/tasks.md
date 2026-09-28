@@ -337,14 +337,16 @@ T16
 
 **Done when**:
 
-- [ ] Each outcome increments exactly its label (unit, happy + both denial causes)
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: 4 new unit tests pass (no silent deletions)
+- [x] Each outcome increments exactly its label (unit, happy + both denial causes)
+- [x] Gate check passes: `npm test`
+- [x] Test count: 4 new unit tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
 
 **Commit**: `feat(api): count download authorizations and denials`
+
+**Status**: ✅ Complete. `DownloadService` now records `denied` on both rejection causes (404 non-owner/not-found, 409 not-completed) and `authorized` only after the presigned URL is issued; the catalog-unavailable 502 path counts nothing (unavailability is not an authorization outcome). No DI change — the service uses the process-wide registry instance. 4 new unit tests in `download.service.spec.ts` assert exact exposition series plus the unchanged exception types/status codes (409/404/502 per L-001) (unit 186 → 190, 0 failed).
 
 ---
 

@@ -122,7 +122,7 @@ The API emits no structured logs, no metrics, and its only health signal is a fi
 | OBS-07 | P1: Structured logs (endpoint noise) | Design | Implementing (autoLogging.ignore unit-verified in T2; e2e in T16) |
 | OBS-08 | P2: Metrics (exposition set) | Design | Implementing (registry T6, middleware T7, controller unit-verified in T8; e2e in T16) |
 | OBS-09 | P2: Metrics (rejected uploads) | Design | Implementing (registry T6, edge filter unit-verified in T10, accepted counter lands in T15; e2e in T16) |
-| OBS-10 | P2: Metrics (denied downloads) | Design | Implementing (registry unit-verified in T6; edge call site in T11; e2e in T16) |
+| OBS-10 | P2: Metrics (denied downloads) | Design | Implementing (registry T6, service unit-verified in T11; e2e in T16) |
 | OBS-11 | P2: Health (readiness) | Design | Implementing (`/health` serves since initial slice; semantics documented; e2e in T16) |
 | OBS-12 | P2: Health (liveness) | Design | Implementing (`/health/live` wired in T9; e2e in T16) |
 | OBS-13 | P2: Health/Metrics (no auth) | Design | Implementing (metrics route @Public unit-pinned in T8; liveness/health e2e in T16) |
