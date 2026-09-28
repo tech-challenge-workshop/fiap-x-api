@@ -48,13 +48,19 @@ Phases are ordered and run sequentially - each phase completes before the next b
 T1 -> T2 -> T3 -> T4 -> T5 -> T6
 ```
 
-### Phase 2: Metrics, health, and correlation threading
+### Phase 2: Metrics and health
 
 ```
-T6 -> T7 -> T8 -> T9 -> T10 -> T11 -> T12 -> T13 -> T14 -> T15 -> T16
+T6 -> T7 -> T8 -> T9 -> T10 -> T11 -> T12
 ```
 
-### Phase 3: End-to-end verification
+### Phase 3: Correlation threading
+
+```
+T12 -> T13 -> T14 -> T15 -> T16
+```
+
+### Phase 4: End-to-end verification
 
 ```
 T16
@@ -442,8 +448,9 @@ T16
 
 ```
 Phase 1:  T1 -> T2 -> T3 -> T4 -> T5 -> T6
-Phase 2:  T6 -> T7 -> T8 -> T9 -> T10 -> T11 -> T12 -> T13 -> T14 -> T15 -> T16
-Phase 3:  T16
+Phase 2:  T6 -> T7 -> T8 -> T9 -> T10 -> T11 -> T12
+Phase 3:  T12 -> T13 -> T14 -> T15 -> T16
+Phase 4:  T16
 ```
 
 Execution is strictly sequential — one task at a time, gate before commit, one Conventional Commit per task.
