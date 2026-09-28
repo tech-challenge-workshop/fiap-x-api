@@ -412,14 +412,16 @@ T16
 
 **Done when**:
 
-- [ ] Adapter unit test asserts the recorded id
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: 2 new unit tests pass (no silent deletions)
+- [x] Adapter unit test asserts the recorded id
+- [x] Gate check passes: `npm test`
+- [x] Test count: 2 new unit tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
 
 **Commit**: `feat(api): record the correlation id in the in-memory catalog adapter`
+
+**Status**: ✅ Complete. `InMemoryCatalogClient` stores the optional `correlationId` on the request record (conditionally — no phantom key when omitted) so test doubles can assert propagation like the real Catalog's persisted column. 2 new tests read the record back via `getOwned` and assert the exact id / its absence (unit 193 → 195, 0 failed; lint clean).
 
 ---
 
