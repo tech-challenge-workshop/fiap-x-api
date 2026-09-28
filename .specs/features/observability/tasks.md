@@ -82,15 +82,17 @@ T16
 
 **Done when**:
 
-- [ ] Context is isolated per concurrent run (two interleaved runs see distinct ids)
-- [ ] Parser accepts 1..128 printable ASCII after trim; rejects blank, 129+ chars, non-strings (number/object/null → null, never coerced — L-010), control chars
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: 10 new unit tests pass (no silent deletions)
+- [x] Context is isolated per concurrent run (two interleaved runs see distinct ids)
+- [x] Parser accepts 1..128 printable ASCII after trim; rejects blank, 129+ chars, non-strings (number/object/null → null, never coerced — L-010), control chars
+- [x] Gate check passes: `npm test`
+- [x] Test count: 10 new unit tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
 
 **Commit**: `feat(api): add the correlation context for observability`
+
+**Status**: ✅ Complete. `src/observability/correlation-context.ts` holds the ALS-based `CorrelationContext` (class, DI-ready singleton) plus the strict `parseCorrelationId` (trim, `/^[\x20-\x7E]{1,128}$/`, non-strings → null without coercion). 10 new unit tests in `correlation-context.spec.ts` (unit 152 → 162, 0 failed).
 
 ---
 
