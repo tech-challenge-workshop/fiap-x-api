@@ -9,6 +9,7 @@ import { CatalogUnavailableError } from '../errors/catalog-unavailable.error';
 
 interface StoredRequest extends CatalogOwnedItem {
   ownerUserId: string;
+  ownerEmail: string;
   sourceStorageKey: string;
   idempotencyKey: string;
   zipStorageKey?: string;
@@ -38,6 +39,7 @@ export class InMemoryCatalogClient implements CatalogClient {
    */
   createProcessingRequest(
     ownerUserId: string,
+    ownerEmail: string,
     sourceStorageKey: string,
     idempotencyKey: string,
   ): Promise<CatalogCreateOutcome> {
@@ -74,6 +76,7 @@ export class InMemoryCatalogClient implements CatalogClient {
       processingRequestId: `pr-${ownerUserId}-${sourceStorageKey}-${this.idSequence}`,
       status: 'RECEIVED',
       ownerUserId,
+      ownerEmail,
       sourceStorageKey,
       idempotencyKey,
       createdAt: now,

@@ -36,6 +36,7 @@ describe('HttpCatalogClient', () => {
 
     const result = await client.createProcessingRequest(
       'user-1',
+      'user-1@fiapx.local',
       'source-1',
       'idem-1',
     );
@@ -50,6 +51,7 @@ describe('HttpCatalogClient', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ownerUserId: 'user-1',
+        ownerEmail: 'user-1@fiapx.local',
         sourceStorageKey: 'source-1',
         idempotencyKey: 'idem-1',
       }),
@@ -60,7 +62,12 @@ describe('HttpCatalogClient', () => {
     fetchSpy.mockRejectedValue(new Error('network down'));
 
     await expect(
-      client.createProcessingRequest('user-1', 'source-1', 'idem-1'),
+      client.createProcessingRequest(
+        'user-1',
+        'user-1@fiapx.local',
+        'source-1',
+        'idem-1',
+      ),
     ).rejects.toThrow(CatalogUnavailableError);
   });
 
@@ -76,7 +83,12 @@ describe('HttpCatalogClient', () => {
     } as unknown as Response);
 
     await expect(
-      client.createProcessingRequest('user-1', 'source-1', 'idem-1'),
+      client.createProcessingRequest(
+        'user-1',
+        'user-1@fiapx.local',
+        'source-1',
+        'idem-1',
+      ),
     ).rejects.toThrow(CatalogUnavailableError);
   });
 
@@ -88,7 +100,12 @@ describe('HttpCatalogClient', () => {
     } as unknown as Response);
 
     await expect(
-      client.createProcessingRequest('user-1', 'source-1', 'idem-1'),
+      client.createProcessingRequest(
+        'user-1',
+        'user-1@fiapx.local',
+        'source-1',
+        'idem-1',
+      ),
     ).rejects.toThrow(CatalogUnavailableError);
   });
 });
@@ -278,6 +295,7 @@ describe('HttpCatalogClient owner-scoped reads (local server)', () => {
     const create = (client = new HttpCatalogClient(baseUrl)) =>
       client.createProcessingRequest(
         'alice',
+        'alice@fiapx.local',
         'sources/alice/clip.mp4',
         'idem-1',
       );

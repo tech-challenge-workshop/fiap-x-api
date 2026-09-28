@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { Owner } from '../auth/owner.decorator';
+import { OwnerEmail } from '../auth/owner-email.decorator';
 import { CatalogErrorFilter } from '../processing-requests/filters/catalog-error.filter';
 import { StartUploadDto } from './start-upload.dto';
 import { StartedUpload, StartUploadService } from './start-upload.service';
@@ -36,12 +37,14 @@ export class UploadsController {
   @Post(':uploadId/complete')
   async complete(
     @Owner() owner: string,
+    @OwnerEmail() ownerEmail: string | undefined,
     @Param('uploadId') uploadId: string,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ processingRequestId: string; status: string }> {
     const confirmed = await this.completeService.execute(
       owner,
+      ownerEmail,
       uploadId,
       idempotencyKey,
     );

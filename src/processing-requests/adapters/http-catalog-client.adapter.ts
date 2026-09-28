@@ -12,6 +12,7 @@ export class HttpCatalogClient implements CatalogClient {
 
   async createProcessingRequest(
     ownerUserId: string,
+    ownerEmail: string,
     sourceStorageKey: string,
     idempotencyKey: string,
   ): Promise<CatalogCreateOutcome> {
@@ -20,7 +21,12 @@ export class HttpCatalogClient implements CatalogClient {
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ownerUserId, sourceStorageKey, idempotencyKey }),
+        body: JSON.stringify({
+          ownerUserId,
+          ownerEmail,
+          sourceStorageKey,
+          idempotencyKey,
+        }),
       },
     );
     if (status === 409) {

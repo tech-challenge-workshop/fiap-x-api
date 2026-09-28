@@ -50,9 +50,16 @@ export class CompleteUploadService {
 
   async execute(
     owner: string,
+    ownerEmail: string | undefined,
     uploadId: string,
     idempotencyKey: string | undefined,
   ): Promise<ConfirmedUpload> {
+    if (!ownerEmail?.trim()) {
+      throw new BadRequestException(
+        'The authenticated token does not carry an email claim',
+      );
+    }
+    ownerEmail = ownerEmail.trim();
     if (!idempotencyKey?.trim()) {
       throw new BadRequestException('Idempotency-Key header is required');
     }
@@ -104,7 +111,12 @@ export class CompleteUploadService {
       );
     }
 
-    const created = await this.create(owner, object.key, idempotencyKey);
+    const created = await this.create(
+      owner,
+      ownerEmail,
+      object.key,
+      idempotencyKey,
+    );
     if (created.outcome === 'conflict') {
       throw new ConflictException(
         'Idempotency-Key is already used for another upload',
@@ -132,12 +144,14 @@ export class CompleteUploadService {
 
   private async create(
     owner: string,
+    ownerEmail: string,
     key: string,
     idempotencyKey: string,
   ): Promise<CatalogCreateOutcome> {
     try {
       return await this.catalog.createProcessingRequest(
         owner,
+        ownerEmail,
         key,
         idempotencyKey,
       );

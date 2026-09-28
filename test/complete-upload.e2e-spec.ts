@@ -50,8 +50,8 @@ describe('POST /uploads/:uploadId/complete (e2e)', () => {
   beforeAll(async () => {
     await idp.start();
     storageEnv.set();
-    alice = await idp.token({ sub: 'alice' });
-    bob = await idp.token({ sub: 'bob' });
+    alice = await idp.token({ sub: 'alice', email: 'alice@fiapx.local' });
+    bob = await idp.token({ sub: 'bob', email: 'bob@fiapx.local' });
   });
 
   afterAll(async () => {
@@ -115,6 +115,7 @@ describe('POST /uploads/:uploadId/complete (e2e)', () => {
     expect(body.status).toBe('RECEIVED');
     expect(createSpy).toHaveBeenCalledWith(
       'alice',
+      'alice@fiapx.local',
       `sources/alice/${upload.uploadId}.mp4`,
       'key-1',
     );
@@ -123,6 +124,77 @@ describe('POST /uploads/:uploadId/complete (e2e)', () => {
     await expect(
       storage.findObject(`sources/alice/${upload.uploadId}.`),
     ).resolves.toMatchObject({ key: upload.key, sizeBytes: 20 * MiB });
+  });
+
+  it('rejects confirmation with 400 when the token carries no email claim, and creates nothing', async () => {
+    const noEmailToken = await idp.token({ sub: 'alice' });
+    const upload = await uploaded(20 * MiB, noEmailToken);
+
+    const res = await confirm(
+      app,
+      noEmailToken,
+      upload.uploadId,
+      'key-no-email',
+    );
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      statusCode: 400,
+      message: 'The authenticated token does not carry an email claim',
+    });
+    expect(await requestsOf('alice')).toEqual([]);
+  });
+
+  it('passes the token email to the Catalog on confirmation', async () => {
+    const withEmail = await idp.token({
+      sub: 'alice',
+      email: 'alice@fiapx.local',
+    });
+    const upload = await uploaded(20 * MiB, withEmail);
+    const createSpy = jest.spyOn(catalog, 'createProcessingRequest');
+
+    await confirm(app, withEmail, upload.uploadId, 'key-with-email').expect(
+      201,
+    );
+
+    expect(createSpy).toHaveBeenCalledWith(
+      'alice',
+      'alice@fiapx.local',
+      `sources/alice/${upload.uploadId}.mp4`,
+      'key-with-email',
+    );
+  });
+
+  it('trims whitespace padding from the token email before passing it to the Catalog', async () => {
+    const paddedEmail = await idp.token({
+      sub: 'alice',
+      email: '  alice@fiapx.local  ',
+    });
+    const upload = await uploaded(20 * MiB, paddedEmail);
+    const createSpy = jest.spyOn(catalog, 'createProcessingRequest');
+
+    await confirm(app, paddedEmail, upload.uploadId, 'key-padded-email').expect(
+      201,
+    );
+
+    expect(createSpy).toHaveBeenCalledWith(
+      'alice',
+      'alice@fiapx.local',
+      `sources/alice/${upload.uploadId}.mp4`,
+      'key-padded-email',
+    );
+  });
+
+  it('never logs the owner email', async () => {
+    const withEmail = await idp.token({
+      sub: 'alice',
+      email: 'alice@fiapx.local',
+    });
+    const upload = await uploaded(20 * MiB, withEmail);
+
+    await confirm(app, withEmail, upload.uploadId, 'key-log-check').expect(201);
+
+    expect(logger.lines.join('\n')).not.toContain('alice@fiapx.local');
   });
 
   it('answers a repeated confirmation with 200 and the same id, creating nothing new (AC P2.3)', async () => {
@@ -302,6 +374,7 @@ describe('POST /uploads/:uploadId/complete (e2e)', () => {
 
     expect(createSpy).toHaveBeenCalledWith(
       'alice',
+      'alice@fiapx.local',
       upload.key,
       'key with space',
     );

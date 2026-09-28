@@ -47,12 +47,29 @@ describe('TokenVerifier', () => {
       .claim;
   };
 
-  it('returns only the sub of a valid token, whatever else it carries', async () => {
+  it('returns the sub and email of a valid token, and nothing else it carries', async () => {
     const token = await signToken(key, {
       email: 'alice@example.com',
       preferred_username: 'alice',
       realm_access: { roles: ['admin'] },
     });
+
+    await expect(verifier.verify(token)).resolves.toStrictEqual({
+      sub: 'alice',
+      email: 'alice@example.com',
+    });
+  });
+
+  it('returns email undefined when the token carries none', async () => {
+    const token = await signToken(key, { preferred_username: 'alice' });
+
+    await expect(verifier.verify(token)).resolves.toStrictEqual({
+      sub: 'alice',
+    });
+  });
+
+  it('treats a non-string email claim as absent', async () => {
+    const token = await signToken(key, { email: 12345 });
 
     await expect(verifier.verify(token)).resolves.toStrictEqual({
       sub: 'alice',
