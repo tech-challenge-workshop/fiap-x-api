@@ -362,14 +362,16 @@ T16
 
 **Done when**:
 
-- [ ] Typecheck passes across the repo (adapters still compile - they are updated in T13/T14)
-- [ ] Gate check passes: `npm run typecheck`
-- [ ] Test count: no new tests (interface layer - matrix)
+- [x] Typecheck passes across the repo (adapters still compile - they are updated in T13/T14)
+- [x] Gate check passes: `npm run typecheck`
+- [x] Test count: no new tests (interface layer - matrix)
 
 **Tests**: none
 **Gate**: build
 
 **Commit**: `feat(api): extend the catalog client port with the correlation id`
+
+**Status**: ✅ Complete. `CatalogClient.createProcessingRequest` gains an optional trailing `correlationId?: string` (AD-016: optional everywhere, originated at the edge) with a doc comment covering persistence/propagation. Positional style kept — an input-object refactor would pull every adapter into this task, and T13/T14 own those. Adapters and callers compile unchanged (optional trailing param is assignable both ways). Gate: typecheck green.
 
 ---
 
