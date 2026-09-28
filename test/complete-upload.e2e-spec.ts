@@ -118,6 +118,7 @@ describe('POST /uploads/:uploadId/complete (e2e)', () => {
       'alice@fiapx.local',
       `sources/alice/${upload.uploadId}.mp4`,
       'key-1',
+      res.headers['x-correlation-id'],
     );
     expect(await requestsOf('alice')).toEqual([body.processingRequestId]);
     await expect(stillInProgress(upload)).resolves.toBeUndefined();
@@ -153,15 +154,19 @@ describe('POST /uploads/:uploadId/complete (e2e)', () => {
     const upload = await uploaded(20 * MiB, withEmail);
     const createSpy = jest.spyOn(catalog, 'createProcessingRequest');
 
-    await confirm(app, withEmail, upload.uploadId, 'key-with-email').expect(
-      201,
-    );
+    const res = await confirm(
+      app,
+      withEmail,
+      upload.uploadId,
+      'key-with-email',
+    ).expect(201);
 
     expect(createSpy).toHaveBeenCalledWith(
       'alice',
       'alice@fiapx.local',
       `sources/alice/${upload.uploadId}.mp4`,
       'key-with-email',
+      res.headers['x-correlation-id'],
     );
   });
 
@@ -173,15 +178,19 @@ describe('POST /uploads/:uploadId/complete (e2e)', () => {
     const upload = await uploaded(20 * MiB, paddedEmail);
     const createSpy = jest.spyOn(catalog, 'createProcessingRequest');
 
-    await confirm(app, paddedEmail, upload.uploadId, 'key-padded-email').expect(
-      201,
-    );
+    const res = await confirm(
+      app,
+      paddedEmail,
+      upload.uploadId,
+      'key-padded-email',
+    ).expect(201);
 
     expect(createSpy).toHaveBeenCalledWith(
       'alice',
       'alice@fiapx.local',
       `sources/alice/${upload.uploadId}.mp4`,
       'key-padded-email',
+      res.headers['x-correlation-id'],
     );
   });
 
@@ -370,13 +379,19 @@ describe('POST /uploads/:uploadId/complete (e2e)', () => {
     const upload = await uploaded();
     const createSpy = jest.spyOn(catalog, 'createProcessingRequest');
 
-    await confirm(app, alice, upload.uploadId, 'key with space').expect(201);
+    const res = await confirm(
+      app,
+      alice,
+      upload.uploadId,
+      'key with space',
+    ).expect(201);
 
     expect(createSpy).toHaveBeenCalledWith(
       'alice',
       'alice@fiapx.local',
       upload.key,
       'key with space',
+      res.headers['x-correlation-id'],
     );
   });
 

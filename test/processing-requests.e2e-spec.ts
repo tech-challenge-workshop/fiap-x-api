@@ -135,7 +135,7 @@ describe('The key-supplied create path is gone (e2e)', () => {
     uploadParts(storage, upload, 1);
     const createSpy = jest.spyOn(catalogClient, 'createProcessingRequest');
 
-    await request(app.getHttpServer())
+    const res = await request(app.getHttpServer())
       .post(`/uploads/${upload.uploadId}/complete`)
       .set('Authorization', `Bearer ${token}`)
       .set('Idempotency-Key', 'key-1')
@@ -147,6 +147,7 @@ describe('The key-supplied create path is gone (e2e)', () => {
       'alice@fiapx.local',
       upload.key,
       'key-1',
+      res.headers['x-correlation-id'],
     );
     expect(upload.key).toBe(`sources/alice/${upload.uploadId}.mp4`);
   });

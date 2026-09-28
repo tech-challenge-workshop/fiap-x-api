@@ -115,8 +115,8 @@ The API emits no structured logs, no metrics, and its only health signal is a fi
 | --- | --- | --- | --- |
 | OBS-01 | P1: Structured logs (assign id) | Design | Implementing (edge middleware wired in T4, probe-verified; e2e in T16) |
 | OBS-02 | P1: Structured logs (JSON shape) | Design | Implementing (config unit-verified in T2, module wired in T3, bootstrap smoke-verified in T5; e2e in T16) |
-| OBS-03 | P1: Structured logs (forward header) | Design | Implementing (port param landed in T12; header/body wiring in T13; caller threading in T15; e2e in T16) |
-| OBS-04 | P1: Structured logs (confirm carries id) | Design | Implementing (port param landed in T12; adapters in T13/T14; caller threading in T15; e2e in T16) |
+| OBS-03 | P1: Structured logs (forward header) | Design | Implementing (header+body unit-verified T13, caller threading unit-verified T15; e2e sweep T16) |
+| OBS-04 | P1: Structured logs (confirm carries id) | Design | Implementing (port T12, adapters T13/T14, caller threading unit-verified T15; e2e sweep T16) |
 | OBS-05 | P1: Structured logs (invalid header) | Design | Implementing (parser unit-verified in T1; edge replacement lands in T4/T16) |
 | OBS-06 | P1: Structured logs (email redaction) | Design | Implementing (redaction unit-verified in T2; depth bounded to root + one level; e2e in T16) |
 | OBS-07 | P1: Structured logs (endpoint noise) | Design | Implementing (autoLogging.ignore unit-verified in T2; e2e in T16) |

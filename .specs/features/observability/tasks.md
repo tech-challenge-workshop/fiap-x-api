@@ -437,15 +437,17 @@ T16
 
 **Done when**:
 
-- [ ] Confirm flow passes the request's id end-to-end (unit with in-memory adapter + existing e2e still green)
-- [ ] Successful confirm increments `outcome="accepted"` exactly once (also on idempotent replay? No — replay returns the existing request without double-counting; the 200 replay path does NOT increment)
-- [ ] Gate check passes: `npm test && npm run test:e2e`
-- [ ] Test count: 4 new unit tests pass (no silent deletions)
+- [x] Confirm flow passes the request's id end-to-end (unit with in-memory adapter + existing e2e still green)
+- [x] Successful confirm increments `outcome="accepted"` exactly once (also on idempotent replay? No — replay returns the existing request without double-counting; the 200 replay path does NOT increment)
+- [x] Gate check passes: `npm test && npm run test:e2e`
+- [x] Test count: 4 new unit tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
 
 **Commit**: `feat(api): propagate the correlation id through upload confirmation`
+
+**Status**: ✅ Complete. `CompleteUploadService` reads the current id from the process-wide `correlationContext` (exported singleton — ObservabilityModule now provides that same instance, so DI and direct importers share one ALS) and passes it as the port's optional 5th arg; outside a request scope it passes nothing (AD-016). `recordUpload('accepted')` fires only on the `created` outcome — the 200 replay returns the existing request without re-counting, and conflicts count nothing. 4 new unit tests in `complete-upload.service.spec.ts` (unit 195 → 199, 0 failed). Cross-feature e2e: 5 existing catalog-call assertions in complete-upload/processing-requests suites now bind the new 5th arg to the response's `x-correlation-id` header — the S8 contract change, asserted strictly (propagated id === edge id). E2e green 12/12 (one unrelated flake on 'never logs the owner email' in the first full run, green on re-run).
 
 ---
 

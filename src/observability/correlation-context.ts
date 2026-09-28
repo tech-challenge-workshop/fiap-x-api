@@ -30,3 +30,10 @@ export class CorrelationContext {
     return parseCorrelationId(this.getCorrelationId()) ?? randomUUID();
   }
 }
+
+/**
+ * The one process-wide context: injected consumers (middleware) and direct
+ * importers (services, the pino mixin) must share the same ALS store, so the
+ * id the edge assigns is the id everything else reads.
+ */
+export const correlationContext = new CorrelationContext();

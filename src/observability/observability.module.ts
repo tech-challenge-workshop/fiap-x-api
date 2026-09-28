@@ -1,20 +1,16 @@
 import { Module } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
-import { CorrelationContext } from './correlation-context';
+import { CorrelationContext, correlationContext } from './correlation-context';
 import { buildRootLoggerConfig } from './logger.config';
 import { MetricsController } from './metrics.controller';
-
-// One process-wide context: the pino mixin and the injected consumers must
-// read the same ALS store or correlation ids would never meet.
-const sharedContext = new CorrelationContext();
 
 @Module({
   imports: [
     LoggerModule.forRootAsync({
-      useFactory: () => buildRootLoggerConfig(sharedContext),
+      useFactory: () => buildRootLoggerConfig(correlationContext),
     }),
   ],
-  providers: [{ provide: CorrelationContext, useValue: sharedContext }],
+  providers: [{ provide: CorrelationContext, useValue: correlationContext }],
   controllers: [MetricsController],
   exports: [CorrelationContext],
 })
