@@ -185,14 +185,16 @@ T16
 
 **Done when**:
 
-- [ ] `npm run start:prod` boots with JSON logs and the global ValidationPipe still rejects non-whitelisted bodies
-- [ ] Gate check passes: `npm run lint && npm run typecheck && npm run build`
-- [ ] Test count: no new tests (bootstrap layer - matrix)
+- [x] `npm run start:prod` boots with JSON logs and the global ValidationPipe still rejects non-whitelisted bodies
+- [x] Gate check passes: `npm run lint && npm run typecheck && npm run build`
+- [x] Test count: no new tests (bootstrap layer - matrix)
 
 **Tests**: none
 **Gate**: build
 
 **Commit**: `feat(api): bootstrap the pino logger in main`
+
+**Status**: ✅ Complete. `main.ts` now creates the app with `bufferLogs: true`, switches to the pino `Logger` via `app.useLogger(app.get(Logger))`, and calls `app.flushLogs()` after listen; the ValidationPipe block is byte-identical. Smoke-checked the built server: boot logs are one-line JSON carrying `timestamp`/`level`/`service`/`msg`, and `GET /health` answers 200 with a generated `x-correlation-id`. Whitelist rejection stays covered by the existing e2e suites (untouched pipe). Full phase gate after T5 green: lint, typecheck, unit 170/170, build.
 
 ---
 
