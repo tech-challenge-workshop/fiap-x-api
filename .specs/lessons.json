@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 16,
+  "next_id": 20,
   "lessons": [
     {
       "id": "L-001",
@@ -274,6 +274,78 @@
       ],
       "created": "2026-09-26T14:22:30Z",
       "last_seen": "2026-09-26T14:22:30Z"
+    },
+    {
+      "id": "L-016",
+      "key": "spec_deviation::pino fast redact wildcard paths key require a parent key so bare root keys must also be listed in redact paths or a root level sensitive value survives redaction",
+      "text": "pino/fast-redact wildcard paths (\"*.key\") require a parent key, so bare root keys must also be listed in redact.paths or a root-level sensitive value survives redaction",
+      "signal": "spec_deviation",
+      "scope": "src/observability",
+      "status": "candidate",
+      "features": [
+        "observability"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/observability/logger.config.ts:7-12 (src/observability)"
+      ],
+      "created": "2026-09-29T00:14:24Z",
+      "last_seen": "2026-09-29T00:14:24Z"
+    },
+    {
+      "id": "L-017",
+      "key": "spec_deviation::pino http customprops only reaches request scoped child loggers fields required on every log line e g service must go in the root pino mixin or bootstrap non request lines lack them",
+      "text": "pino-http customProps only reaches request-scoped child loggers; fields required on every log line (e.g. service) must go in the root pino mixin or bootstrap/non-request lines lack them",
+      "signal": "spec_deviation",
+      "scope": "src/observability",
+      "status": "candidate",
+      "features": [
+        "observability"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/observability/logger.config.ts:26-32 (src/observability)"
+      ],
+      "created": "2026-09-29T00:14:24Z",
+      "last_seen": "2026-09-29T00:14:24Z"
+    },
+    {
+      "id": "L-018",
+      "key": "spec_precision_gap::when a spec requires mechanical log redaction state the nesting depth it must cover fast redact wildcards bound redaction to root one level unless the spec accepts that limit",
+      "text": "When a spec requires mechanical log redaction, state the nesting depth it must cover; fast-redact wildcards bound redaction to root + one level unless the spec accepts that limit",
+      "signal": "spec_precision_gap",
+      "scope": "src/observability",
+      "status": "candidate",
+      "features": [
+        "observability"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "OBS-06 / src/observability/logger.config.ts:13-24 (src/observability)"
+      ],
+      "created": "2026-09-29T00:14:36Z",
+      "last_seen": "2026-09-29T00:14:36Z"
+    },
+    {
+      "id": "L-019",
+      "key": "spec_precision_gap::a shall not block under concurrency edge case needs a concurrent test traffic in flight while scraping asserting the endpoint only after the traffic mix leaves the non blocking property untested",
+      "text": "A shall-not-block-under-concurrency edge case needs a concurrent test (traffic in flight while scraping); asserting the endpoint only after the traffic mix leaves the non-blocking property untested",
+      "signal": "spec_precision_gap",
+      "scope": "test/observability",
+      "status": "candidate",
+      "features": [
+        "observability"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "spec.md:91 edge case (test/observability)"
+      ],
+      "created": "2026-09-29T00:14:36Z",
+      "last_seen": "2026-09-29T00:14:36Z"
     }
   ]
 }
