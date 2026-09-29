@@ -16,6 +16,8 @@ import type {
   CatalogCreateOutcome,
 } from '../processing-requests/ports/catalog-client.port';
 import { CatalogUnavailableError } from '../processing-requests/errors/catalog-unavailable.error';
+import { correlationContext } from '../observability/correlation-context';
+import { apiMetrics } from '../observability/metrics';
 import { PART_SIZE_BYTES } from './start-upload.service';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -122,6 +124,11 @@ export class CompleteUploadService {
         'Idempotency-Key is already used for another upload',
       );
     }
+    // The replay path returns the existing request: counting it again would
+    // report one upload as many.
+    if (created.outcome === 'created') {
+      apiMetrics.recordUpload('accepted');
+    }
     return {
       outcome: created.outcome,
       processingRequestId: created.processingRequestId,
@@ -154,6 +161,9 @@ export class CompleteUploadService {
         ownerEmail,
         key,
         idempotencyKey,
+        // Optional everywhere (AD-016): outside a request scope there is no
+        // id to propagate, so nothing is sent.
+        correlationContext.getCorrelationId(),
       );
     } catch (error) {
       if (error instanceof CatalogUnavailableError) {

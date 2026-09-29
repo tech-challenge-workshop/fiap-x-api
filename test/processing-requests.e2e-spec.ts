@@ -85,7 +85,10 @@ describe('The key-supplied create path is gone (e2e)', () => {
     ).router;
 
     const routes = router.stack
-      .filter((layer) => layer.route)
+      // S8 runs correlation and metrics middleware for all routes; their
+      // '{*splat}' catch-all pseudo-routes are not part of the business
+      // surface this test pins.
+      .filter((layer) => layer.route && !layer.route.path.includes('*'))
       .map(
         (layer) =>
           `${Object.keys(layer.route!.methods).join(',').toUpperCase()} ${layer.route!.path}`,
@@ -95,6 +98,8 @@ describe('The key-supplied create path is gone (e2e)', () => {
       [
         'GET /',
         'GET /health',
+        'GET /health/live',
+        'GET /metrics',
         'GET /processing-requests',
         'GET /processing-requests/:id',
         'GET /processing-requests/:id/download',
@@ -130,7 +135,7 @@ describe('The key-supplied create path is gone (e2e)', () => {
     uploadParts(storage, upload, 1);
     const createSpy = jest.spyOn(catalogClient, 'createProcessingRequest');
 
-    await request(app.getHttpServer())
+    const res = await request(app.getHttpServer())
       .post(`/uploads/${upload.uploadId}/complete`)
       .set('Authorization', `Bearer ${token}`)
       .set('Idempotency-Key', 'key-1')
@@ -142,6 +147,7 @@ describe('The key-supplied create path is gone (e2e)', () => {
       'alice@fiapx.local',
       upload.key,
       'key-1',
+      res.headers['x-correlation-id'],
     );
     expect(upload.key).toBe(`sources/alice/${upload.uploadId}.mp4`);
   });

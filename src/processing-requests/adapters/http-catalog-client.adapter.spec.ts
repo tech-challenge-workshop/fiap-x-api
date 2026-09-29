@@ -112,9 +112,16 @@ describe('HttpCatalogClient', () => {
 
 describe('HttpCatalogClient owner-scoped reads (local server)', () => {
   type Reply = { status: number; body: string };
+  type Capture = {
+    method?: string;
+    url?: string;
+    headers: Record<string, unknown>;
+    body: string;
+  };
   let server: Server;
   let baseUrl: string;
   let requestedUrls: string[];
+  let captures: Capture[];
   let reply: Reply;
 
   const json = (status: number, body: unknown): Reply => ({
@@ -133,8 +140,18 @@ describe('HttpCatalogClient owner-scoped reads (local server)', () => {
   beforeAll(async () => {
     server = createServer((req, res) => {
       requestedUrls.push(req.url ?? '');
-      res.writeHead(reply.status, { 'Content-Type': 'application/json' });
-      res.end(reply.body);
+      const chunks: Buffer[] = [];
+      req.on('data', (chunk: Buffer) => chunks.push(chunk));
+      req.on('end', () => {
+        captures.push({
+          method: req.method,
+          url: req.url,
+          headers: req.headers,
+          body: Buffer.concat(chunks).toString('utf8'),
+        });
+        res.writeHead(reply.status, { 'Content-Type': 'application/json' });
+        res.end(reply.body);
+      });
     });
     await new Promise<void>((resolve) =>
       server.listen(0, '127.0.0.1', resolve),
@@ -148,6 +165,7 @@ describe('HttpCatalogClient owner-scoped reads (local server)', () => {
 
   beforeEach(() => {
     requestedUrls = [];
+    captures = [];
   });
 
   /** A base URL on which nothing listens: every fetch fails at the network. */
@@ -330,6 +348,50 @@ describe('HttpCatalogClient owner-scoped reads (local server)', () => {
       });
 
       await expect(create()).resolves.toStrictEqual({ outcome: 'conflict' });
+    });
+
+    it('sends the correlation id as header and body field with the same value', async () => {
+      reply = json(201, created);
+
+      await new HttpCatalogClient(baseUrl).createProcessingRequest(
+        'alice',
+        'alice@fiapx.local',
+        'sources/alice/clip.mp4',
+        'idem-1',
+        'corr-123',
+      );
+
+      expect(captures).toHaveLength(1);
+      expect(captures[0].headers['x-correlation-id']).toBe('corr-123');
+      expect(JSON.parse(captures[0].body)).toMatchObject({
+        correlationId: 'corr-123',
+      });
+    });
+
+    it('sends the correlation id verbatim', async () => {
+      reply = json(201, created);
+
+      await new HttpCatalogClient(baseUrl).createProcessingRequest(
+        'alice',
+        'alice@fiapx.local',
+        'sources/alice/clip.mp4',
+        'idem-1',
+        'demo 123',
+      );
+
+      const body = JSON.parse(captures[0].body) as Record<string, unknown>;
+      expect(captures[0].headers['x-correlation-id']).toBe('demo 123');
+      expect(body.correlationId).toBe('demo 123');
+    });
+
+    it('sends no correlation header or field when the id is omitted', async () => {
+      reply = json(201, created);
+
+      await create();
+
+      expect(captures).toHaveLength(1);
+      expect(captures[0].headers['x-correlation-id']).toBeUndefined();
+      expect(JSON.parse(captures[0].body)).not.toHaveProperty('correlationId');
     });
 
     it.each<[string, Reply]>([

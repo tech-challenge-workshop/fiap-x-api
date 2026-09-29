@@ -12,6 +12,7 @@ interface StoredRequest extends CatalogOwnedItem {
   ownerEmail: string;
   sourceStorageKey: string;
   idempotencyKey: string;
+  correlationId?: string;
   zipStorageKey?: string;
 }
 
@@ -42,6 +43,7 @@ export class InMemoryCatalogClient implements CatalogClient {
     ownerEmail: string,
     sourceStorageKey: string,
     idempotencyKey: string,
+    correlationId?: string,
   ): Promise<CatalogCreateOutcome> {
     if (this.shouldReject) {
       return Promise.reject(
@@ -79,6 +81,7 @@ export class InMemoryCatalogClient implements CatalogClient {
       ownerEmail,
       sourceStorageKey,
       idempotencyKey,
+      ...(correlationId !== undefined ? { correlationId } : {}),
       createdAt: now,
       updatedAt: now,
     };

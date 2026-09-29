@@ -36,11 +36,18 @@ export type CatalogCreateOutcome =
 export type CatalogArchive = { zipStorageKey: string } | 'not-completed';
 
 export interface CatalogClient {
+  /**
+   * Creates the processing request for a confirmed upload. `correlationId`
+   * is the id the API edge assigned to the request (OBS-01); the Catalog
+   * persists it and propagates it on events. Optional everywhere: callers
+   * outside a request scope omit it (AD-016).
+   */
   createProcessingRequest(
     ownerUserId: string,
     ownerEmail: string,
     sourceStorageKey: string,
     idempotencyKey: string,
+    correlationId?: string,
   ): Promise<CatalogCreateOutcome>;
 
   getArchive(

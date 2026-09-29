@@ -104,6 +104,30 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: src/uploads/complete-upload.service.ts:22 (interface)
 - last seen: 2026-09-26T14:22:30Z
 
+### L-016 - pino/fast-redact wildcard paths ("*.key") require a parent key, so bare root keys must also be listed in redact.paths or a root-level sensitive value survives redaction
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `src/observability` · harmful: 0
+- features: observability
+- evidence: src/observability/logger.config.ts:7-12 (src/observability)
+- last seen: 2026-09-29T00:14:24Z
+
+### L-017 - pino-http customProps only reaches request-scoped child loggers; fields required on every log line (e.g. service) must go in the root pino mixin or bootstrap/non-request lines lack them
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `src/observability` · harmful: 0
+- features: observability
+- evidence: src/observability/logger.config.ts:26-32 (src/observability)
+- last seen: 2026-09-29T00:14:24Z
+
+### L-018 - When a spec requires mechanical log redaction, state the nesting depth it must cover; fast-redact wildcards bound redaction to root + one level unless the spec accepts that limit
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `src/observability` · harmful: 0
+- features: observability
+- evidence: OBS-06 / src/observability/logger.config.ts:13-24 (src/observability)
+- last seen: 2026-09-29T00:14:36Z
+
+### L-019 - A shall-not-block-under-concurrency edge case needs a concurrent test (traffic in flight while scraping); asserting the endpoint only after the traffic mix leaves the non-blocking property untested
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `test/observability` · harmful: 0
+- features: observability
+- evidence: spec.md:91 edge case (test/observability)
+- last seen: 2026-09-29T00:14:36Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

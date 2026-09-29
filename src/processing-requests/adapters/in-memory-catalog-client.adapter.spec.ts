@@ -38,6 +38,38 @@ describe('InMemoryCatalogClient', () => {
     expect(processingRequestId).toContain('videos/clip.mp4');
   });
 
+  it('records the correlation id on the created request', async () => {
+    const result = await adapter.createProcessingRequest(
+      'user-123',
+      'user-123@fiapx.local',
+      'videos/clip.mp4',
+      'idem-1',
+      'corr-abc',
+    );
+
+    const recorded = await adapter.getOwned(
+      'user-123',
+      (result as { processingRequestId: string }).processingRequestId,
+    );
+    expect(recorded).toMatchObject({ correlationId: 'corr-abc' });
+  });
+
+  it('records no correlation id when none was passed', async () => {
+    const result = await adapter.createProcessingRequest(
+      'user-123',
+      'user-123@fiapx.local',
+      'videos/clip.mp4',
+      'idem-1',
+    );
+
+    const recorded = await adapter.getOwned(
+      'user-123',
+      (result as { processingRequestId: string }).processingRequestId,
+    );
+    expect(recorded).not.toBeUndefined();
+    expect(recorded).not.toHaveProperty('correlationId');
+  });
+
   it('returns deterministic sequential ids', async () => {
     const first = await adapter.createProcessingRequest(
       'user-1',

@@ -1,12 +1,38 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  BadRequestException,
+  Catch,
+  ExceptionFilter,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { STORAGE_CONFIG } from '../storage/storage.module';
 import type { StorageConfig } from '../storage/storage.config';
 import { UPLOAD_STORAGE } from '../storage/upload-storage.port';
 import type { UploadStorage } from '../storage/upload-storage.port';
+import { CatalogErrorFilter } from '../processing-requests/filters/catalog-error.filter';
+import { apiMetrics } from '../observability/metrics';
 import { StartUploadDto, videoExtensionOf } from './start-upload.dto';
 
 export const PART_SIZE_BYTES = 16 * 1024 * 1024;
+
+/**
+ * Counts uploads the edge rejected. The type/size validation runs in the
+ * global ValidationPipe before StartUploadService executes, so the counting
+ * hook is this filter. Nest runs one exception filter per throw, so after
+ * counting it delegates to CatalogErrorFilter, keeping this controller's
+ * `{ statusCode, message }` error contract byte-identical.
+ */
+@Catch(BadRequestException)
+export class RejectedUploadMetricFilter implements ExceptionFilter {
+  private readonly delegate = new CatalogErrorFilter();
+
+  catch(exception: BadRequestException, host: ArgumentsHost): void {
+    apiMetrics.recordUpload('rejected');
+    this.delegate.catch(exception, host);
+  }
+}
 
 export interface StartedUpload {
   uploadId: string;
